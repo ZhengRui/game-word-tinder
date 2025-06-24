@@ -7,23 +7,26 @@
 - Custom favicon with microphone icon
 - Project structure with routing (`/`, `/display`, `/play`)
 
-## ✅ **COMPLETED** - Visual Layout
+## ✅ **COMPLETED** - Visual Layout & Real-time Foundation
 - **Home page** with navigation to Display and Play modes
 - **Display page** (`/display`) - Main screen layout:
   - Left half: Word card display with topic and keywords
-  - Right half: Team displays with member status indicators
-  - Mock data showing teams, scores, and player states
+  - Right half: Team displays with real-time player status
+  - Dynamic team member display and status indicators
 - **Play page** (`/play`) - Mobile interface:
-  - Team registration form
-  - Current word card preview
-  - Large claim button
-  - Status indicators (available/cooldown)
+  - Team registration form with real-time validation
+  - Connection status indicators
+  - Live team member counts
+  - Real-time game state updates
 
-## ⚠️ **PARTIALLY IMPLEMENTED** - Core Game Mechanics
-- **Registration system**: UI exists but not connected to backend
-- **Team management**: Static display, no real-time updates
-- **Word card claiming**: Button exists but no server communication
-- **Basic Socket.io setup**: Route exists but incomplete implementation
+## ✅ **COMPLETED** - Phase 1: Real-time Foundation
+- **Socket.io Server**: Complete WebSocket server with game state management (port 3001)
+- **Player Registration**: Full registration system with validation and error handling
+- **Real-time Updates**: Live player list updates on display screen
+- **Connection Management**: Handles connects, disconnects, and reconnections
+- **Game State Management**: Centralized state with broadcasting to all clients
+- **Team Management**: Real-time team member tracking and status updates
+- **Dual Server Setup**: Separate Socket.io server (3001) and Next.js app (3000)
 
 ## ❌ **NOT IMPLEMENTED** - Real-time Game Logic
 1. **Word Card System**:
@@ -71,5 +74,13 @@
 4. Build claiming mechanism with conflict resolution
 5. Add timer systems for speech and cooldown
 
-## 📝 **Notes**
-The foundation is solid with good UI/UX, but the core real-time game mechanics need to be implemented to make it functional.
+## 📝 **Development Notes**
+- **Running the app**: Requires two terminals
+  - Terminal 1: `bun run socket-server` (Socket.io server on port 3001)
+  - Terminal 2: `bun dev` (Next.js app on port 3000)
+- **Testing**: Open `/display` on main screen, `/play` on mobile devices
+- **Real-time features**: Player registration, team updates, connection status all working
+- **Deployment**: Current setup requires external Socket.io hosting for production (Vercel + Railway/Render)
+
+## 🎯 **Ready for Phase 2**
+The real-time foundation is complete and tested. Next phase: Word Card Management System.

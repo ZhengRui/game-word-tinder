@@ -1,32 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSocket } from '@/hooks/useSocket';
 
 export default function PlayPage() {
   const [playerName, setPlayerName] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [canClaim, setCanClaim] = useState(true);
+  const { 
+    isConnected, 
+    currentPlayer, 
+    gameState, 
+    registrationError, 
+    registerPlayer, 
+    claimWord,
+    clearRegistrationError 
+  } = useSocket();
+
+  const isRegistered = !!currentPlayer;
 
   const handleRegister = () => {
-    if (playerName && selectedTeam) {
-      setIsRegistered(true);
+    if (playerName.trim() && selectedTeam) {
+      registerPlayer(playerName.trim(), selectedTeam);
     }
   };
 
   const handleClaim = () => {
-    if (canClaim) {
-      setCanClaim(false);
-      // TODO: Send claim to server
-      console.log('Claimed by:', playerName, 'from', selectedTeam);
-    }
+    claimWord();
   };
+
+  // Clear registration error when inputs change
+  useEffect(() => {
+    if (registrationError) {
+      clearRegistrationError();
+    }
+  }, [playerName, selectedTeam]);
+
+  const canClaim = currentPlayer?.status === 'available' && gameState?.gamePhase === 'card-display';
+  const playerStatus = currentPlayer?.status || 'disconnected';
 
   if (!isRegistered) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-4">
         <div className="max-w-md mx-auto mt-20">
           <h1 className="text-3xl font-bold text-center mb-8">Word Tinder</h1>
+          
+          {/* Connection Status */}
+          <div className="text-center mb-6">
+            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+              isConnected ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+            }`}>
+              <div className={`w-2 h-2 rounded-full mr-2 ${
+                isConnected ? 'bg-green-400' : 'bg-red-400'
+              }`}></div>
+              {isConnected ? 'Connected' : 'Connecting...'}
+            </div>
+          </div>
           
           <div className="space-y-6">
             <div>
@@ -35,8 +63,9 @@ export default function PlayPage() {
                 type="text"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full p-3 rounded bg-gray-800 border border-gray-700 text-white"
+                className="w-full p-3 rounded bg-gray-800 border border-gray-700 text-white focus:border-blue-500 focus:outline-none"
                 placeholder="Enter your name"
+                disabled={!isConnected}
               />
             </div>
 
@@ -47,21 +76,33 @@ export default function PlayPage() {
                   <button
                     key={team}
                     onClick={() => setSelectedTeam(team)}
-                    className={`w-full p-3 rounded border-2 transition-colors ${
+                    disabled={!isConnected}
+                    className={`w-full p-3 rounded border-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       selectedTeam === team
                         ? 'border-blue-500 bg-blue-900'
                         : 'border-gray-700 bg-gray-800 hover:border-gray-600'
                     }`}
                   >
                     {team}
+                    {gameState && (
+                      <span className="text-sm text-gray-400 ml-2">
+                        ({gameState.teams[team as keyof typeof gameState.teams].members.length} players)
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
             </div>
 
+            {registrationError && (
+              <div className="bg-red-900 text-red-300 p-3 rounded border border-red-700">
+                {registrationError}
+              </div>
+            )}
+
             <button
               onClick={handleRegister}
-              disabled={!playerName || !selectedTeam}
+              disabled={!playerName.trim() || !selectedTeam || !isConnected}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed p-3 rounded font-semibold transition-colors"
             >
               Join Game
@@ -78,37 +119,75 @@ export default function PlayPage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold">Word Tinder</h1>
           <p className="text-gray-400">
-            {playerName} • {selectedTeam}
+            {currentPlayer?.name} • {currentPlayer?.team}
           </p>
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm mt-2 ${
+            isConnected ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+          }`}>
+            <div className={`w-2 h-2 rounded-full mr-2 ${
+              isConnected ? 'bg-green-400' : 'bg-red-400'
+            }`}></div>
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </div>
         </div>
 
         {/* Current Word Card Preview */}
         <div className="bg-gray-800 rounded-lg p-4 mb-8 text-center">
           <h2 className="text-xl font-semibold mb-2">Current Word</h2>
-          <div className="text-lg text-blue-400">Innovation</div>
-          <div className="text-sm text-gray-500 mt-2">
-            Keywords: Technology, Future, Progress
+          {gameState?.currentCard ? (
+            <>
+              <div className="text-lg text-blue-400">{gameState.currentCard.word}</div>
+              <div className="text-sm text-gray-500 mt-2">
+                Keywords: {gameState.currentCard.keywords?.join(', ')}
+              </div>
+            </>
+          ) : (
+            <div className="text-gray-500">Waiting for next word...</div>
+          )}
+        </div>
+
+        {/* Game Status */}
+        <div className="bg-gray-800 rounded-lg p-4 mb-6 text-center">
+          <div className="text-sm text-gray-400 mb-2">Game Phase</div>
+          <div className="text-lg font-semibold">
+            {gameState?.gamePhase === 'waiting' && 'Waiting for players'}
+            {gameState?.gamePhase === 'card-display' && 'Word available - Click to claim!'}
+            {gameState?.gamePhase === 'speaking' && `${gameState.currentSpeaker ? 'Someone is speaking' : 'Speech in progress'}`}
+            {gameState?.gamePhase === 'cooldown' && 'Round finished'}
           </div>
         </div>
 
         {/* Claim Button */}
         <button
           onClick={handleClaim}
-          disabled={!canClaim}
+          disabled={!canClaim || !isConnected}
           className={`w-full p-6 rounded-lg font-bold text-xl transition-all ${
-            canClaim
+            canClaim && isConnected
               ? 'bg-green-600 hover:bg-green-700 active:scale-95'
-              : 'bg-red-600 cursor-not-allowed'
+              : 'bg-gray-600 cursor-not-allowed'
           }`}
         >
-          {canClaim ? 'CLAIM TO SPEAK!' : 'COOLDOWN: 2:30'}
+          {!isConnected ? 'DISCONNECTED' :
+           playerStatus === 'speaking' ? 'YOU ARE SPEAKING!' :
+           playerStatus === 'cooldown' ? 'IN COOLDOWN' :
+           canClaim ? 'CLAIM TO SPEAK!' : 'WAITING...'}
         </button>
 
         {/* Status */}
         <div className="mt-6 text-center">
           <div className="text-sm text-gray-400">
-            Status: {canClaim ? 'Ready to claim' : 'In cooldown'}
+            Status: {
+              !isConnected ? 'Disconnected' :
+              playerStatus === 'speaking' ? 'Speaking' :
+              playerStatus === 'cooldown' ? 'In cooldown' :
+              playerStatus === 'available' ? 'Available' : 'Waiting'
+            }
           </div>
+          {gameState && (
+            <div className="text-xs text-gray-500 mt-2">
+              Players online: {gameState.players.length}
+            </div>
+          )}
         </div>
       </div>
     </div>

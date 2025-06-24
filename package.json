@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build", 
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "socket-server": "node socket-server.js"
   },
   "dependencies": {
     "next": "15.3.4",

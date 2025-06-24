@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎤 Word Tinder - Group Showdown
 
-## Getting Started
+An interactive word game for Toastmasters meetings that encourages spontaneous speaking and teamwork. Participants compete in teams to claim word prompts and deliver 1-minute impromptu speeches.
 
-First, run the development server:
+## 🚀 Quick Start
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Development Setup
+
+1. **Install dependencies:**
+   ```bash
+   bun install
+   ```
+
+2. **Start the application (requires 2 terminals):**
+   
+   **Terminal 1 - Socket.io Server:**
+   ```bash
+   bun run socket-server
+   ```
+   
+   **Terminal 2 - Next.js App:**
+   ```bash
+   bun dev
+   ```
+
+3. **Open the game:**
+   - **Main Display:** `http://localhost:3000/display` (for projector)
+   - **Player Interface:** `http://localhost:3000/play` (for mobile devices)
+
+## 🎮 How to Play
+
+1. **Setup:** Open the display page on a projector/main screen
+2. **Join:** Players open the play page on their mobile devices
+3. **Register:** Each player enters their name and selects a team (A, B, or C)
+4. **Watch:** See real-time updates as players join teams on the main display
+
+## 🔧 Technical Architecture
+
+- **Frontend:** Next.js 15 with TypeScript and Tailwind CSS
+- **Real-time:** Socket.io for WebSocket communication
+- **State Management:** Centralized game state with real-time broadcasting
+- **Ports:** 
+  - Next.js app: `http://localhost:3000`
+  - Socket.io server: `http://localhost:3001`
+
+## 📊 Implementation Status
+
+### ✅ Completed (Phase 1)
+- Real-time player registration system
+- Live team member tracking and display
+- Connection management (connect/disconnect/reconnect)
+- Game state management with broadcasting
+- Responsive UI for both display and mobile
+
+### 🚧 In Development (Phase 2)
+- Word card management system
+- Claiming mechanism for real-time word claims
+- Timer systems for speech and cooldown periods
+
+### 📋 Planned Features
+- Scoring system with team leaderboards
+- Visual transitions and animations
+- Sound effects for game events
+- Admin controls for game flow
+
+## 📁 Project Structure
+
+```
+src/
+├── app/
+│   ├── display/          # Main display screen
+│   ├── play/             # Mobile player interface
+│   └── page.tsx          # Home/navigation page
+├── hooks/
+│   └── useSocket.ts      # Socket.io client hook
+├── socket-server.js      # Socket.io server
+└── ...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Deployment Notes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Current Setup:** Dual server architecture
+- **Development:** Run both servers locally
+- **Production:** Requires separate hosting for Socket.io server
+  - Next.js app → Vercel (recommended)
+  - Socket.io server → Railway/Render/Heroku
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🤝 Contributing
 
-## Learn More
+See `status.md` and `TODO.md` for current implementation status and next steps.
 
-To learn more about Next.js, take a look at the following resources:
+## 📄 License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT License - Built for Toastmasters communities worldwide! 🎤
