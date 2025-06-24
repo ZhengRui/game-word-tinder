@@ -1,5 +1,6 @@
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const { getRandomCard } = require('./word-cards');
 
 const socketPort = 3001;
 
@@ -13,7 +14,9 @@ const gameState = {
   },
   currentCard: null,
   gamePhase: 'waiting', // waiting, card-display, speaking, cooldown
-  currentSpeaker: null
+  currentSpeaker: null,
+  cardTimer: null,
+  cardTimeRemaining: 0
 };
 
 // Helper functions
@@ -28,7 +31,8 @@ function getGameStateForClients() {
     teams: gameState.teams,
     currentCard: gameState.currentCard,
     gamePhase: gameState.gamePhase,
-    currentSpeaker: gameState.currentSpeaker
+    currentSpeaker: gameState.currentSpeaker,
+    cardTimeRemaining: gameState.cardTimeRemaining
   };
 }
 
@@ -36,6 +40,52 @@ function broadcastGameState(io) {
   const clientState = getGameStateForClients();
   io.emit('game-state-update', clientState);
   console.log('Broadcasting game state to all clients');
+}
+
+// Word card management functions
+function startNewCard(io) {
+  // Clear any existing timer
+  if (gameState.cardTimer) {
+    clearInterval(gameState.cardTimer);
+  }
+
+  // Get new random card
+  gameState.currentCard = getRandomCard();
+  gameState.gamePhase = 'card-display';
+  gameState.cardTimeRemaining = 10; // 10 seconds display time
+  gameState.currentSpeaker = null;
+
+  console.log(`🎲 New card: ${gameState.currentCard.topic}`);
+
+  // Start countdown timer
+  gameState.cardTimer = setInterval(() => {
+    gameState.cardTimeRemaining--;
+    
+    // Broadcast updated game state (includes timer)
+    broadcastGameState(io);
+
+    if (gameState.cardTimeRemaining <= 0) {
+      // Auto-skip to next card if not claimed
+      if (!gameState.currentSpeaker) {
+        console.log('⏰ Card timed out, showing next card');
+        startNewCard(io);
+      } else {
+        // Stop timer if someone claimed it
+        clearInterval(gameState.cardTimer);
+        gameState.cardTimer = null;
+      }
+    }
+  }, 1000);
+
+  // Broadcast new game state
+  broadcastGameState(io);
+}
+
+function stopCardTimer() {
+  if (gameState.cardTimer) {
+    clearInterval(gameState.cardTimer);
+    gameState.cardTimer = null;
+  }
 }
 
 // Create HTTP server for Socket.io
@@ -141,6 +191,27 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle admin controls for starting game/cards
+  socket.on('start-game', () => {
+    console.log('🎮 Starting new game with first card');
+    startNewCard(io);
+  });
+
+  socket.on('next-card', () => {
+    console.log('⏭️ Admin requested next card');
+    startNewCard(io);
+  });
+
+  socket.on('stop-game', () => {
+    console.log('⏹️ Game stopped by admin');
+    stopCardTimer();
+    gameState.gamePhase = 'waiting';
+    gameState.currentCard = null;
+    gameState.currentSpeaker = null;
+    gameState.cardTimeRemaining = 0;
+    broadcastGameState(io);
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log(`🔌 Client disconnected: ${socket.id}`);
@@ -148,7 +219,9 @@ io.on('connection', (socket) => {
     // Find and remove player
     const player = Array.from(gameState.players.values()).find(p => p.socketId === socket.id);
     if (player) {
-      // Remove from team
+      const wasSpeaking = gameState.currentSpeaker === player.id;
+      
+      // Remove from team first
       const teamMembers = gameState.teams[player.team].members;
       const memberIndex = teamMembers.indexOf(player.id);
       if (memberIndex > -1) {
@@ -159,6 +232,23 @@ io.on('connection', (socket) => {
       gameState.players.delete(player.id);
       
       console.log(`👋 Player ${player.name} left the game`);
+      
+      // If the disconnecting player was the current speaker, reset game state
+      if (wasSpeaking) {
+        console.log(`🎤 Current speaker ${player.name} disconnected - resetting game state`);
+        
+        // Reset speaking state and return to card display
+        gameState.currentSpeaker = null;
+        gameState.gamePhase = 'card-display';
+        
+        // If there's still time on the card, continue the timer
+        // If not, start a new card
+        if (gameState.cardTimeRemaining <= 0) {
+          console.log('🎲 Starting new card after speaker disconnect');
+          startNewCard(io);
+          return; // startNewCard will handle broadcasting
+        }
+      }
       
       // Broadcast updated state
       broadcastGameState(io);

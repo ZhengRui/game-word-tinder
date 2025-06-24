@@ -28,59 +28,49 @@
 - **Team Management**: Real-time team member tracking and status updates
 - **Dual Server Setup**: Separate Socket.io server (3001) and Next.js app (3000)
 
-## ❌ **NOT IMPLEMENTED** - Real-time Game Logic
-1. **Word Card System**:
-   - Random word card generation
-   - 10-second auto-skip timer
-   - Card database/content management
+## ✅ **COMPLETED** - Phase 2: Word Card Management System
+- **Word Card Database**: 30 Toastmasters-focused topics with relevant keywords (word-cards.js)
+- **Random Card Selection**: Server automatically selects random cards from database
+- **10-Second Auto-Skip Timer**: Cards automatically advance if not claimed within 10 seconds
+- **Real-time Card Display**: Both display and mobile interfaces show current topic with countdown
+- **Admin Controls**: Start Game, Next Card, and Stop Game buttons on display interface
+- **Claiming Mechanism**: Real-time claim processing (first-come-first-served) with validation
+- **Speaker Identification**: Clear display of who claimed the speech (name + team)
+- **Disconnect Handling**: Proper cleanup when speaking player disconnects/refreshes
+- **Responsive Layout**: Mobile-optimized interface with fixed-height card container
+- **Visual Enhancements**: Timer countdown with red pulsing animation when ≤3 seconds
 
-2. **Claiming Mechanism**:
-   - Real-time claim processing (first-come-first-served)
-   - Claim validation and conflict resolution
-   - Player state updates
+## ❌ **NOT IMPLEMENTED** - Advanced Game Features
+1. **Speech Timer Systems**:
+   - 1-minute speech countdown during speaking phase
+   - 3-minute cooldown timers for players after speaking
+   - Auto-progression from speaking to cooldown phase
 
-3. **Timer Systems**:
-   - 1-minute speech countdown
-   - 3-minute cooldown timers
-   - Auto-progression between states
+2. **Scoring System**:
+   - Point calculation and storage for successful speeches
+   - Bonus point mechanics for performance
+   - Team leaderboards and final scoring
+   - Winner determination logic
 
-4. **Game State Management**:
-   - Active game sessions
-   - Player registration backend
-   - Team score tracking
-   - Game flow orchestration
-
-5. **Transitions & Visual Effects**:
-   - 3-2-1 countdown transitions
-   - Card flip animations
-   - State change visual feedback
-
-## ❌ **NOT IMPLEMENTED** - Advanced Features
-1. **Scoring System**:
-   - Point calculation and storage
-   - Bonus point mechanics
-   - Final scoring and winner determination
-
-2. **Optional Features**:
-   - Live leaderboard updates
-   - Sound effects for transitions
-   - Funny/surprise card types
-   - Audience voting system
+3. **Advanced Features**:
+   - Live leaderboard updates during game
+   - Sound effects for transitions and events
+   - Enhanced visual transitions (3-2-1 countdowns, card animations)
+   - Optional audience voting system
 
 ## 🎯 **NEXT PRIORITY TASKS**
-1. Complete Socket.io server implementation
-2. Implement real-time player registration
-3. Add word card management system
-4. Build claiming mechanism with conflict resolution
-5. Add timer systems for speech and cooldown
+1. Implement 1-minute speech timer with auto-progression
+2. Add 3-minute cooldown system for players after speaking
+3. Build scoring system with point tracking and team leaderboards
+4. Add enhanced visual transitions and sound effects
 
 ## 📝 **Development Notes**
 - **Running the app**: Requires two terminals
   - Terminal 1: `bun run socket-server` (Socket.io server on port 3001)
   - Terminal 2: `bun dev` (Next.js app on port 3000)
 - **Testing**: Open `/display` on main screen, `/play` on mobile devices
-- **Real-time features**: Player registration, team updates, connection status all working
+- **Game Flow**: Start Game → 10s card timer → Claim speech → Speaker identified → Disconnect cleanup
 - **Deployment**: Current setup requires external Socket.io hosting for production (Vercel + Railway/Render)
 
-## 🎯 **Ready for Phase 2**
-The real-time foundation is complete and tested. Next phase: Word Card Management System.
+## 🎯 **Ready for Phase 3**
+Word card management system is complete with claiming and disconnect handling. Next phase: Speech and Cooldown Timer Systems.

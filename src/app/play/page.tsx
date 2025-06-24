@@ -33,7 +33,7 @@ export default function PlayPage() {
     if (registrationError) {
       clearRegistrationError();
     }
-  }, [playerName, selectedTeam]);
+  }, [playerName, selectedTeam, registrationError, clearRegistrationError]);
 
   const canClaim = currentPlayer?.status === 'available' && gameState?.gamePhase === 'card-display';
   const playerStatus = currentPlayer?.status || 'disconnected';
@@ -132,29 +132,23 @@ export default function PlayPage() {
         </div>
 
         {/* Current Word Card Preview */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-8 text-center">
-          <h2 className="text-xl font-semibold mb-2">Current Word</h2>
+        <div className="bg-gray-800 rounded-lg p-6 mb-8 text-center h-64 flex flex-col justify-center">
+          <div className="text-sm text-gray-500 mb-3">Current Topic</div>
           {gameState?.currentCard ? (
             <>
-              <div className="text-lg text-blue-400">{gameState.currentCard.word}</div>
-              <div className="text-sm text-gray-500 mt-2">
-                Keywords: {gameState.currentCard.keywords?.join(', ')}
+              <div className="text-3xl text-blue-400 font-bold mb-4 leading-tight min-h-[2.5rem] flex items-center justify-center">{gameState.currentCard.topic}</div>
+              <div className="text-sm text-gray-400 mb-3">
+                Keywords: {gameState.currentCard.keywords.join(' • ')}
               </div>
+              {gameState.cardTimeRemaining > 0 && (
+                <div className={`text-2xl font-bold ${gameState.cardTimeRemaining <= 3 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`}>
+                  ⏰ {gameState.cardTimeRemaining}s
+                </div>
+              )}
             </>
           ) : (
-            <div className="text-gray-500">Waiting for next word...</div>
+            <div className="text-gray-500">Waiting for next topic...</div>
           )}
-        </div>
-
-        {/* Game Status */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-6 text-center">
-          <div className="text-sm text-gray-400 mb-2">Game Phase</div>
-          <div className="text-lg font-semibold">
-            {gameState?.gamePhase === 'waiting' && 'Waiting for players'}
-            {gameState?.gamePhase === 'card-display' && 'Word available - Click to claim!'}
-            {gameState?.gamePhase === 'speaking' && `${gameState.currentSpeaker ? 'Someone is speaking' : 'Speech in progress'}`}
-            {gameState?.gamePhase === 'cooldown' && 'Round finished'}
-          </div>
         </div>
 
         {/* Claim Button */}
@@ -174,7 +168,7 @@ export default function PlayPage() {
         </button>
 
         {/* Status */}
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <div className="text-sm text-gray-400">
             Status: {
               !isConnected ? 'Disconnected' :
@@ -183,8 +177,23 @@ export default function PlayPage() {
               playerStatus === 'available' ? 'Available' : 'Waiting'
             }
           </div>
+          <div className="text-xs text-gray-500">
+            Game: {
+              gameState?.gamePhase === 'waiting' ? 'Waiting to start' :
+              gameState?.gamePhase === 'card-display' ? 'Topic available' :
+              gameState?.gamePhase === 'speaking' ? 
+                (() => {
+                  if (currentPlayer?.id === gameState.currentSpeaker) {
+                    return 'YOU ARE SPEAKING!';
+                  }
+                  const speaker = gameState.players.find(p => p.id === gameState.currentSpeaker);
+                  return speaker ? `${speaker.name} (${speaker.team}) speaking` : 'Someone speaking';
+                })() :
+              gameState?.gamePhase === 'cooldown' ? 'Round finished' : 'Loading...'
+            }
+          </div>
           {gameState && (
-            <div className="text-xs text-gray-500 mt-2">
+            <div className="text-xs text-gray-500">
               Players online: {gameState.players.length}
             </div>
           )}

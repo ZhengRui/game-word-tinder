@@ -32,7 +32,10 @@ An interactive word game for Toastmasters meetings that encourages spontaneous s
 1. **Setup:** Open the display page on a projector/main screen
 2. **Join:** Players open the play page on their mobile devices
 3. **Register:** Each player enters their name and selects a team (A, B, or C)
-4. **Watch:** See real-time updates as players join teams on the main display
+4. **Start Game:** Admin clicks "Start Game" on the display screen
+5. **Claim Topics:** When a topic appears with 10-second timer, players race to claim it
+6. **Speak:** The first player to claim gets to deliver a 1-minute impromptu speech
+7. **Continue:** Game automatically progresses to next topics
 
 ## 🔧 Technical Architecture
 
@@ -45,17 +48,21 @@ An interactive word game for Toastmasters meetings that encourages spontaneous s
 
 ## 📊 Implementation Status
 
-### ✅ Completed (Phase 1)
+### ✅ Completed (Phase 1 & 2)
 - Real-time player registration system
 - Live team member tracking and display
 - Connection management (connect/disconnect/reconnect)
 - Game state management with broadcasting
-- Responsive UI for both display and mobile
+- Word card management system with 30 Toastmasters topics
+- 10-second auto-skip timer for cards
+- Real-time claiming mechanism (first-come-first-served)
+- Speaker identification and disconnect handling
+- Responsive UI for both display and mobile interfaces
+- Admin controls (Start Game, Next Card, Stop Game)
 
-### 🚧 In Development (Phase 2)
-- Word card management system
-- Claiming mechanism for real-time word claims
-- Timer systems for speech and cooldown periods
+### 🚧 In Development (Phase 3)
+- 1-minute speech timer with auto-progression
+- 3-minute cooldown system for players after speaking
 
 ### 📋 Planned Features
 - Scoring system with team leaderboards

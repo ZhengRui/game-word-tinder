@@ -15,6 +15,12 @@ export interface Team {
   score: number;
 }
 
+export interface WordCard {
+  id: number;
+  topic: string;
+  keywords: string[];
+}
+
 export interface GameState {
   players: Player[];
   teams: {
@@ -22,9 +28,10 @@ export interface GameState {
     'Team B': Team;
     'Team C': Team;
   };
-  currentCard: any;
+  currentCard: WordCard | null;
   gamePhase: 'waiting' | 'card-display' | 'speaking' | 'cooldown';
   currentSpeaker: string | null;
+  cardTimeRemaining: number;
 }
 
 export function useSocket() {
@@ -78,11 +85,11 @@ export function useSocket() {
 
     // Claim events
     socket.on('word-claimed', (data: { playerId: string; playerName: string; team: string }) => {
-      console.log('Word claimed:', data);
+      // Word successfully claimed
     });
 
     socket.on('claim-error', (data: { message: string }) => {
-      console.log('Claim error:', data.message);
+      // Handle claim error if needed
     });
 
     // Cleanup on unmount
@@ -105,6 +112,24 @@ export function useSocket() {
     }
   };
 
+  const startGame = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('start-game');
+    }
+  };
+
+  const nextCard = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('next-card');
+    }
+  };
+
+  const stopGame = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('stop-game');
+    }
+  };
+
   return {
     isConnected,
     gameState,
@@ -112,6 +137,9 @@ export function useSocket() {
     registrationError,
     registerPlayer,
     claimWord,
+    startGame,
+    nextCard,
+    stopGame,
     clearRegistrationError: () => setRegistrationError(null)
   };
 }
