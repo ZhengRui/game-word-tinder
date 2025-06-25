@@ -23,13 +23,19 @@ export interface WordCard {
   keywords: string[];
 }
 
+export interface GameConfig {
+  numberOfTeams: number;
+  cardDisplayTime: number;
+  speechTime: number;
+  cooldownTime: number;
+  speechPoints: number;
+  bonusPoints: number;
+}
+
 export interface GameState {
   players: Player[];
-  teams: {
-    'Team A': Team;
-    'Team B': Team;
-    'Team C': Team;
-  };
+  teams: Record<string, Team>;
+  config: GameConfig;
   currentCard: WordCard | null;
   gamePhase: 'waiting' | 'card-display' | 'speaking' | 'cooldown';
   currentSpeaker: string | null;
@@ -44,6 +50,7 @@ export function useSocket() {
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const [gameEndResult, setGameEndResult] = useState<{winners: string[], finalScores: any} | null>(null);
+  const [configError, setConfigError] = useState<string | null>(null);
 
   useEffect(() => {
     // Create socket connection
@@ -55,24 +62,20 @@ export function useSocket() {
 
     // Connection event handlers
     socket.on('connect', () => {
-      console.log('Connected to Socket.io server');
       setIsConnected(true);
     });
 
     socket.on('disconnect', () => {
-      console.log('Disconnected from Socket.io server');
       setIsConnected(false);
     });
 
     // Game state updates
     socket.on('game-state-update', (state: GameState) => {
-      console.log('Game state updated:', state);
       setGameState(state);
     });
 
     // Registration events
     socket.on('registration-success', (data: { playerId: string; name: string; team: string }) => {
-      console.log('Registration successful:', data);
       setRegistrationError(null);
       setCurrentPlayer({
         id: data.playerId,
@@ -83,7 +86,6 @@ export function useSocket() {
     });
 
     socket.on('registration-error', (data: { message: string }) => {
-      console.log('Registration error:', data.message);
       setRegistrationError(data.message);
     });
 
@@ -98,8 +100,12 @@ export function useSocket() {
 
     // Game end event
     socket.on('game-ended', (data: { winners: string[]; finalScores: any }) => {
-      console.log('Game ended:', data);
       setGameEndResult(data);
+    });
+
+    // Configuration events
+    socket.on('config-error', (data: { message: string }) => {
+      setConfigError(data.message);
     });
 
     // Cleanup on unmount
@@ -146,19 +152,29 @@ export function useSocket() {
     }
   };
 
+  const updateConfig = (config: Partial<GameConfig>) => {
+    if (socketRef.current) {
+      setConfigError(null);
+      socketRef.current.emit('update-config', { config });
+    }
+  };
+
   return {
     isConnected,
     gameState,
     currentPlayer,
     registrationError,
     gameEndResult,
+    configError,
     registerPlayer,
     claimWord,
     startGame,
     nextCard,
     stopGame,
     awardBonusPoint,
+    updateConfig,
     clearRegistrationError: () => setRegistrationError(null),
-    clearGameEndResult: () => setGameEndResult(null)
+    clearGameEndResult: () => setGameEndResult(null),
+    clearConfigError: () => setConfigError(null)
   };
 }

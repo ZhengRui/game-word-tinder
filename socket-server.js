@@ -4,14 +4,32 @@ const { getRandomCard } = require('./word-cards');
 
 const socketPort = 3001;
 
+// Game configuration with defaults
+const gameConfig = {
+  numberOfTeams: 2,
+  cardDisplayTime: 10, // seconds
+  speechTime: 60, // seconds
+  cooldownTime: 120, // seconds (2 minutes)
+  speechPoints: 2,
+  bonusPoints: 1
+};
+
+// Helper function to generate team structure based on config
+function generateTeams() {
+  const teams = {};
+  const teamNames = ['Team A', 'Team B', 'Team C', 'Team D', 'Team E', 'Team F'];
+  
+  for (let i = 0; i < gameConfig.numberOfTeams; i++) {
+    teams[teamNames[i]] = { members: [], score: 0 };
+  }
+  
+  return teams;
+}
+
 // Game state management
 const gameState = {
   players: new Map(), // playerId -> { id, name, team, status, socketId, cooldownTimer?, cooldownTimeRemaining?, bonusAwarded? }
-  teams: {
-    'Team A': { members: [], score: 0 },
-    'Team B': { members: [], score: 0 },
-    'Team C': { members: [], score: 0 }
-  },
+  teams: generateTeams(),
   currentCard: null,
   gamePhase: 'waiting', // waiting, card-display, speaking, cooldown
   currentSpeaker: null,
@@ -33,6 +51,7 @@ function getGameStateForClients() {
       bonusAwarded: p.bonusAwarded || false
     })),
     teams: gameState.teams,
+    config: gameConfig,
     currentCard: gameState.currentCard,
     gamePhase: gameState.gamePhase,
     currentSpeaker: gameState.currentSpeaker,
@@ -44,7 +63,6 @@ function getGameStateForClients() {
 function broadcastGameState(io) {
   const clientState = getGameStateForClients();
   io.emit('game-state-update', clientState);
-  console.log('Broadcasting game state to all clients');
 }
 
 // Word card management functions
@@ -57,10 +75,8 @@ function startNewCard(io) {
   // Get new random card
   gameState.currentCard = getRandomCard();
   gameState.gamePhase = 'card-display';
-  gameState.cardTimeRemaining = 10; // 10 seconds display time
+  gameState.cardTimeRemaining = gameConfig.cardDisplayTime;
   gameState.currentSpeaker = null;
-
-  console.log(`🎲 New card: ${gameState.currentCard.topic}`);
 
   // Start countdown timer
   gameState.cardTimer = setInterval(() => {
@@ -72,7 +88,6 @@ function startNewCard(io) {
     if (gameState.cardTimeRemaining <= 0) {
       // Auto-skip to next card if not claimed
       if (!gameState.currentSpeaker) {
-        console.log('⏰ Card timed out, showing next card');
         startNewCard(io);
       } else {
         // Stop timer if someone claimed it
@@ -100,8 +115,7 @@ function startSpeechTimer(io) {
     clearInterval(gameState.speechTimer);
   }
 
-  gameState.speechTimeRemaining = 60; // 1 minute for speech
-  console.log(`🎤 Starting 60-second speech timer`);
+  gameState.speechTimeRemaining = gameConfig.speechTime;
 
   gameState.speechTimer = setInterval(() => {
     gameState.speechTimeRemaining--;
@@ -110,7 +124,6 @@ function startSpeechTimer(io) {
     broadcastGameState(io);
 
     if (gameState.speechTimeRemaining <= 0) {
-      console.log('⏱️ Speech time ended, starting cooldown');
       endSpeechAndStartCooldown(io);
     }
   }, 1000);
@@ -125,16 +138,13 @@ function endSpeechAndStartCooldown(io) {
 
   const speaker = gameState.players.get(gameState.currentSpeaker);
   if (speaker) {
-    // Award 2 points to speaker's team for completing speech
-    gameState.teams[speaker.team].score += 2;
-    console.log(`🏆 ${speaker.name} completed speech! ${speaker.team} now has ${gameState.teams[speaker.team].score} points`);
+    // Award points to speaker's team for completing speech
+    gameState.teams[speaker.team].score += gameConfig.speechPoints;
     
     // Change speaker status to cooldown
     speaker.status = 'cooldown';
-    speaker.cooldownTimeRemaining = 180; // 3 minutes cooldown
+    speaker.cooldownTimeRemaining = gameConfig.cooldownTime;
     speaker.bonusAwarded = false; // Allow bonus for this new speech
-    
-    console.log(`❄️ ${speaker.name} entered 3-minute cooldown`);
 
     // Start individual cooldown timer for this player
     speaker.cooldownTimer = setInterval(() => {
@@ -151,7 +161,6 @@ function endSpeechAndStartCooldown(io) {
         speaker.status = 'available';
         speaker.bonusAwarded = false; // Reset bonus flag when player becomes available again
         
-        console.log(`✅ ${speaker.name} cooldown finished - now available`);
         broadcastGameState(io);
       }
     }, 1000);
@@ -186,8 +195,6 @@ const io = new Server(httpServer, {
 
 // Socket.io event handlers
 io.on('connection', (socket) => {
-  console.log(`🔌 Client connected: ${socket.id}`);
-  
   // Send current game state to newly connected client
   socket.emit('game-state-update', getGameStateForClients());
 
@@ -227,8 +234,6 @@ io.on('connection', (socket) => {
     gameState.players.set(playerId, player);
     gameState.teams[team].members.push(playerId);
 
-    console.log(`✅ Player registered: ${name} joined ${team}`);
-    
     // Confirm registration to player
     socket.emit('registration-success', { playerId, name, team });
     
@@ -264,8 +269,6 @@ io.on('connection', (socket) => {
       
       // Stop card timer since word was claimed
       stopCardTimer();
-      
-      console.log(`🎤 ${player.name} claimed the word!`);
       
       // Start 1-minute speech timer
       startSpeechTimer(io);
@@ -303,10 +306,9 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Award 1 bonus point to player's team and mark as awarded
-    gameState.teams[player.team].score += 1;
+    // Award bonus point to player's team and mark as awarded
+    gameState.teams[player.team].score += gameConfig.bonusPoints;
     player.bonusAwarded = true;
-    console.log(`🌟 Bonus point awarded to ${player.name}! ${player.team} now has ${gameState.teams[player.team].score} points`);
     
     // Broadcast updated scores
     broadcastGameState(io);
@@ -314,21 +316,78 @@ io.on('connection', (socket) => {
 
   // Handle admin controls for starting game/cards
   socket.on('start-game', () => {
-    console.log('🎮 Starting new game with first card');
     // Reset all team scores when starting a new game
-    gameState.teams['Team A'].score = 0;
-    gameState.teams['Team B'].score = 0;
-    gameState.teams['Team C'].score = 0;
+    Object.keys(gameState.teams).forEach(teamName => {
+      gameState.teams[teamName].score = 0;
+    });
     startNewCard(io);
   });
 
   socket.on('next-card', () => {
-    console.log('⏭️ Admin requested next card');
     startNewCard(io);
   });
 
+  // Handle configuration updates
+  socket.on('update-config', (data) => {
+    const { config } = data;
+    
+    // Validate configuration
+    if (!config || typeof config !== 'object') {
+      socket.emit('config-error', { message: 'Invalid configuration data' });
+      return;
+    }
+
+    // Validate individual fields
+    if (config.numberOfTeams && (config.numberOfTeams < 2 || config.numberOfTeams > 6)) {
+      socket.emit('config-error', { message: 'Number of teams must be between 2 and 6' });
+      return;
+    }
+
+    if (config.cardDisplayTime && (config.cardDisplayTime < 5 || config.cardDisplayTime > 60)) {
+      socket.emit('config-error', { message: 'Card display time must be between 5 and 60 seconds' });
+      return;
+    }
+
+    if (config.speechTime && (config.speechTime < 30 || config.speechTime > 300)) {
+      socket.emit('config-error', { message: 'Speech time must be between 30 and 300 seconds' });
+      return;
+    }
+
+    if (config.cooldownTime && (config.cooldownTime < 60 || config.cooldownTime > 600)) {
+      socket.emit('config-error', { message: 'Cooldown time must be between 60 and 600 seconds' });
+      return;
+    }
+
+    if (config.speechPoints && (config.speechPoints < 1 || config.speechPoints > 10)) {
+      socket.emit('config-error', { message: 'Speech points must be between 1 and 10' });
+      return;
+    }
+
+    if (config.bonusPoints && (config.bonusPoints < 1 || config.bonusPoints > 5)) {
+      socket.emit('config-error', { message: 'Bonus points must be between 1 and 5' });
+      return;
+    }
+
+    // Update configuration
+    Object.assign(gameConfig, config);
+    
+    // Regenerate teams if numberOfTeams changed
+    if (config.numberOfTeams) {
+      // Save existing players and clear teams
+      const allPlayers = Array.from(gameState.players.values());
+      
+      // Generate new team structure
+      gameState.teams = generateTeams();
+      
+      // Clear all players (they'll need to re-register)
+      gameState.players.clear();
+    }
+    
+    // Broadcast updated configuration
+    broadcastGameState(io);
+  });
+
   socket.on('stop-game', () => {
-    console.log('⏹️ Game stopped by admin');
     stopCardTimer();
     stopSpeechTimer();
     
@@ -337,11 +396,6 @@ io.on('connection', (socket) => {
     const maxScore = Math.max(...teams.map(([_, team]) => team.score));
     const winners = teams.filter(([_, team]) => team.score === maxScore).map(([name, _]) => name);
     
-    if (winners.length === 1) {
-      console.log(`🎉 Game ended! Winner: ${winners[0]} with ${maxScore} points`);
-    } else {
-      console.log(`🎉 Game ended! Tie between: ${winners.join(', ')} with ${maxScore} points each`);
-    }
     
     // Broadcast final scores and winners
     io.emit('game-ended', {
@@ -369,8 +423,6 @@ io.on('connection', (socket) => {
 
   // Handle disconnection
   socket.on('disconnect', () => {
-    console.log(`🔌 Client disconnected: ${socket.id}`);
-    
     // Find and remove player
     const player = Array.from(gameState.players.values()).find(p => p.socketId === socket.id);
     if (player) {
@@ -392,12 +444,8 @@ io.on('connection', (socket) => {
       // Remove from players
       gameState.players.delete(player.id);
       
-      console.log(`👋 Player ${player.name} left the game`);
-      
       // If the disconnecting player was the current speaker, reset game state
       if (wasSpeaking) {
-        console.log(`🎤 Current speaker ${player.name} disconnected - resetting game state`);
-        
         // Stop speech timer and reset speaking state
         stopSpeechTimer();
         gameState.currentSpeaker = null;
@@ -406,7 +454,6 @@ io.on('connection', (socket) => {
         // If there's still time on the card, continue the timer
         // If not, start a new card
         if (gameState.cardTimeRemaining <= 0) {
-          console.log('🎲 Starting new card after speaker disconnect');
           startNewCard(io);
           return; // startNewCard will handle broadcasting
         }

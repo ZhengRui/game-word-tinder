@@ -74,7 +74,7 @@ export default function PlayPage() {
             <div>
               <label className="block text-sm font-medium mb-2">Select Team</label>
               <div className="space-y-2">
-                {['Team A', 'Team B', 'Team C'].map((team) => (
+                {gameState && Object.keys(gameState.teams).map((team) => (
                   <button
                     key={team}
                     onClick={() => setSelectedTeam(team)}
@@ -86,11 +86,9 @@ export default function PlayPage() {
                     }`}
                   >
                     {team}
-                    {gameState && (
-                      <span className="text-sm text-gray-400 ml-2">
-                        ({gameState.teams[team as keyof typeof gameState.teams].members.length} players)
-                      </span>
-                    )}
+                    <span className="text-sm text-gray-400 ml-2">
+                      ({gameState.teams[team].members.length} players)
+                    </span>
                   </button>
                 ))}
               </div>
