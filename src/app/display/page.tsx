@@ -5,17 +5,33 @@ import { useSocket } from '@/hooks/useSocket';
 export default function DisplayPage() {
   const { isConnected, gameState, startGame, nextCard, stopGame } = useSocket();
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="container mx-auto p-4 h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      {/* Header Bar */}
+      <div className="bg-gradient-to-r from-blue-700 to-purple-700" style={{boxShadow: '0 8px 32px rgba(255, 255, 255, 0.1)'}}>
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-4xl lg:text-5xl font-bold text-white text-center tracking-wide">
+            🎤 Word Tinder
+          </h1>
+        </div>
+      </div>
+      
+      {/* Main Content - Takes remaining space and centers vertically */}
+      <div className="flex-1 flex items-center">
+        <div className="container mx-auto p-4 flex flex-col lg:flex-row w-full">
         {/* Left Half - Word Card */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8">
-          <div className="bg-blue-600 rounded-2xl p-8 lg:p-16 w-full max-w-4xl text-center shadow-2xl">
+          <div className="bg-blue-600 rounded-2xl p-8 lg:p-12 w-full max-w-4xl text-center shadow-2xl h-96 lg:h-[32rem] flex flex-col justify-center">
             {gameState?.currentCard ? (
               <>
-                <h1 className="text-3xl lg:text-6xl font-bold mb-4 text-white text-center break-words">{gameState.currentCard.topic}</h1>
-                <div className="text-lg lg:text-2xl text-blue-100 mb-6 lg:mb-8">
-                  <p className="font-semibold mb-2">Keywords:</p>
-                  <p className="leading-relaxed">{gameState.currentCard.keywords.join(' • ')}</p>
+                {/* Fixed height topic section */}
+                <div className="h-24 lg:h-32 flex items-center justify-center mb-6">
+                  <h1 className="text-4xl lg:text-6xl font-bold text-white text-center break-words leading-tight">{gameState.currentCard.topic}</h1>
+                </div>
+                
+                {/* Fixed height keywords section */}
+                <div className="h-32 lg:h-36 flex flex-col justify-center mb-6">
+                  <p className="text-lg lg:text-2xl font-semibold mb-2 text-blue-100">Keywords:</p>
+                  <p className="text-lg lg:text-xl text-blue-100 leading-relaxed">{gameState.currentCard.keywords.join(' • ')}</p>
                 </div>
                 {gameState.gamePhase === 'card-display' && (
                   <div className={`text-2xl lg:text-4xl font-bold ${gameState.cardTimeRemaining <= 3 ? 'text-red-200 animate-pulse' : 'text-blue-200'}`}>
@@ -53,8 +69,6 @@ export default function DisplayPage() {
         {/* Right Half - Teams */}
         <div className="w-full lg:w-1/2 p-4 lg:p-8 flex flex-col justify-center">
           <div>
-            <h2 className="text-2xl lg:text-3xl font-bold mb-6 lg:mb-8 text-center">Teams</h2>
-            
             {gameState ? (
               <>
                 {/* Team A */}
@@ -177,6 +191,7 @@ export default function DisplayPage() {
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
       
