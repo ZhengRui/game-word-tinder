@@ -483,19 +483,20 @@ io.on('connection', (socket) => {
       // Find the paused speaker and reset their state
       const pausedSpeaker = gameState.players.get(gameState.currentSpeaker);
       if (pausedSpeaker) {
+        // Clear only speech-related data, preserve disconnect state
         pausedSpeaker.pausedSpeechTime = null;
-        pausedSpeaker.disconnectedAt = null;
-        pausedSpeaker.reconnectionWindow = null;
         
-        // Clear cleanup timer since we're manually skipping
+        // Since speech was skipped, treat player like regular disconnected player
+        // Give them the full 5-minute window instead of the urgent 2-minute window
+        pausedSpeaker.reconnectionWindow = 300000; // 5 minutes for non-speakers
+        
+        // Clear the old cleanup timer and set a new one with extended time
         if (pausedSpeaker.cleanupTimer) {
           clearTimeout(pausedSpeaker.cleanupTimer);
-          pausedSpeaker.cleanupTimer = null;
         }
-        
-        if (pausedSpeaker.status === 'disconnected') {
-          pausedSpeaker.status = 'available'; // Make them available when they return
-        }
+        pausedSpeaker.cleanupTimer = setTimeout(() => {
+          removeExpiredPlayer(io, pausedSpeaker.id);
+        }, pausedSpeaker.reconnectionWindow);
       }
       
       // Clear the abandoned speech timeout
