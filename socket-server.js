@@ -6,7 +6,7 @@ const socketPort = 3001;
 
 // Game state management
 const gameState = {
-  players: new Map(), // playerId -> { id, name, team, status, socketId, cooldownTimer?, cooldownTimeRemaining? }
+  players: new Map(), // playerId -> { id, name, team, status, socketId, cooldownTimer?, cooldownTimeRemaining?, bonusAwarded? }
   teams: {
     'Team A': { members: [], score: 0 },
     'Team B': { members: [], score: 0 },
@@ -29,7 +29,8 @@ function getGameStateForClients() {
       name: p.name,
       team: p.team,
       status: p.status,
-      cooldownTimeRemaining: p.cooldownTimeRemaining || 0
+      cooldownTimeRemaining: p.cooldownTimeRemaining || 0,
+      bonusAwarded: p.bonusAwarded || false
     })),
     teams: gameState.teams,
     currentCard: gameState.currentCard,
@@ -124,9 +125,14 @@ function endSpeechAndStartCooldown(io) {
 
   const speaker = gameState.players.get(gameState.currentSpeaker);
   if (speaker) {
+    // Award 2 points to speaker's team for completing speech
+    gameState.teams[speaker.team].score += 2;
+    console.log(`🏆 ${speaker.name} completed speech! ${speaker.team} now has ${gameState.teams[speaker.team].score} points`);
+    
     // Change speaker status to cooldown
     speaker.status = 'cooldown';
     speaker.cooldownTimeRemaining = 180; // 3 minutes cooldown
+    speaker.bonusAwarded = false; // Allow bonus for this new speech
     
     console.log(`❄️ ${speaker.name} entered 3-minute cooldown`);
 
@@ -143,6 +149,7 @@ function endSpeechAndStartCooldown(io) {
         speaker.cooldownTimer = null;
         speaker.cooldownTimeRemaining = 0;
         speaker.status = 'available';
+        speaker.bonusAwarded = false; // Reset bonus flag when player becomes available again
         
         console.log(`✅ ${speaker.name} cooldown finished - now available`);
         broadcastGameState(io);
@@ -276,9 +283,42 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle bonus point awards
+  socket.on('award-bonus-point', (data) => {
+    const { playerId } = data;
+    const player = gameState.players.get(playerId);
+    
+    if (!player) {
+      socket.emit('bonus-error', { message: 'Player not found' });
+      return;
+    }
+
+    if (player.status !== 'cooldown') {
+      socket.emit('bonus-error', { message: 'Player not in cooldown' });
+      return;
+    }
+
+    if (player.bonusAwarded) {
+      socket.emit('bonus-error', { message: 'Bonus already awarded for this speech' });
+      return;
+    }
+
+    // Award 1 bonus point to player's team and mark as awarded
+    gameState.teams[player.team].score += 1;
+    player.bonusAwarded = true;
+    console.log(`🌟 Bonus point awarded to ${player.name}! ${player.team} now has ${gameState.teams[player.team].score} points`);
+    
+    // Broadcast updated scores
+    broadcastGameState(io);
+  });
+
   // Handle admin controls for starting game/cards
   socket.on('start-game', () => {
     console.log('🎮 Starting new game with first card');
+    // Reset all team scores when starting a new game
+    gameState.teams['Team A'].score = 0;
+    gameState.teams['Team B'].score = 0;
+    gameState.teams['Team C'].score = 0;
     startNewCard(io);
   });
 
@@ -291,6 +331,23 @@ io.on('connection', (socket) => {
     console.log('⏹️ Game stopped by admin');
     stopCardTimer();
     stopSpeechTimer();
+    
+    // Determine winners (handle ties)
+    const teams = Object.entries(gameState.teams);
+    const maxScore = Math.max(...teams.map(([_, team]) => team.score));
+    const winners = teams.filter(([_, team]) => team.score === maxScore).map(([name, _]) => name);
+    
+    if (winners.length === 1) {
+      console.log(`🎉 Game ended! Winner: ${winners[0]} with ${maxScore} points`);
+    } else {
+      console.log(`🎉 Game ended! Tie between: ${winners.join(', ')} with ${maxScore} points each`);
+    }
+    
+    // Broadcast final scores and winners
+    io.emit('game-ended', {
+      winners: winners,
+      finalScores: gameState.teams
+    });
     
     // Clear all player cooldown timers
     for (const player of gameState.players.values()) {

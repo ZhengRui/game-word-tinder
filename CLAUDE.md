@@ -71,7 +71,7 @@ bun run build
 
 ## Implementation Status
 
-### ✅ Phase 1, 2 & 3 Complete
+### ✅ Phase 1, 2, 3 & 4 Complete
 - **Real-time Foundation**: Player registration, team tracking, connection management
 - **Word Card System**: 30 Toastmasters topics with random selection (word-cards.js)
 - **10-Second Timer**: Auto-skip cards if not claimed within time limit
@@ -85,9 +85,12 @@ bun run build
 - **Timer Displays**: Real-time countdown timers on both mobile and display interfaces
 - **Button States**: Claim buttons properly disabled with countdown during cooldown
 - **Responsive Design**: Mobile-optimized layouts with fixed-height containers
+- **Scoring System**: Complete team scoring with 2 points per speech, 1 point per bonus
+- **Bonus Points**: Star buttons for creativity awards during cooldown periods
+- **Winner Determination**: Automatic winner detection with tie handling
+- **Game End Modal**: Final scores display with winner announcement
 
-### 🚧 Phase 4+ Not Implemented
-- Scoring system with team leaderboards and point tracking
+### 🚧 Phase 5+ Optional Features (Not Planned)
 - Enhanced visual transitions and sound effects
 - Live leaderboard updates and audience voting system
 

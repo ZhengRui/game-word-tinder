@@ -3,9 +3,45 @@
 import { useSocket } from '@/hooks/useSocket';
 
 export default function DisplayPage() {
-  const { isConnected, gameState, startGame, nextCard, stopGame } = useSocket();
+  const { isConnected, gameState, gameEndResult, startGame, nextCard, stopGame, awardBonusPoint, clearGameEndResult } = useSocket();
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      {/* Game End Modal */}
+      {gameEndResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-8 rounded-2xl max-w-2xl w-full mx-4 text-center">
+            <h2 className="text-4xl font-bold mb-6 text-yellow-400">🎉 Game Over!</h2>
+            <h3 className="text-2xl font-semibold mb-4">
+              {gameEndResult.winners.length === 1 ? (
+                <>Winner: <span className="text-green-400">{gameEndResult.winners[0]}</span></>
+              ) : (
+                <>Winners: <span className="text-green-400">{gameEndResult.winners.join(' & ')}</span></>
+              )}
+            </h3>
+            <div className="mb-6">
+              <h4 className="text-xl font-semibold mb-3">Final Scores:</h4>
+              <div className="space-y-2">
+                {Object.entries(gameEndResult.finalScores).map(([team, data]: [string, any]) => (
+                  <div key={team} className="flex justify-between items-center bg-gray-700 p-3 rounded">
+                    <span className={`font-medium ${
+                      team === 'Team A' ? 'text-red-400' :
+                      team === 'Team B' ? 'text-blue-400' : 'text-green-400'
+                    }`}>{team}</span>
+                    <span className="text-white font-bold">{data.score} points</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={clearGameEndResult}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header Bar */}
       <div className="bg-gradient-to-r from-blue-700 to-purple-700" style={{boxShadow: '0 8px 32px rgba(255, 255, 255, 0.1)'}}>
         <div className="container mx-auto px-4 py-4">
@@ -102,6 +138,15 @@ export default function DisplayPage() {
                                  `Cooldown (${Math.floor(player.cooldownTimeRemaining / 60)}:${(player.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
                                  'Cooldown'}
                             </span>
+                            {player.status === 'cooldown' && !player.bonusAwarded && (
+                              <button
+                                onClick={() => awardBonusPoint(player.id)}
+                                className="ml-2 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                                title="Award bonus point for creativity"
+                              >
+                                🌟
+                              </button>
+                            )}
                           </div>
                         );
                       })
@@ -140,6 +185,15 @@ export default function DisplayPage() {
                                  `Cooldown (${Math.floor(player.cooldownTimeRemaining / 60)}:${(player.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
                                  'Cooldown'}
                             </span>
+                            {player.status === 'cooldown' && !player.bonusAwarded && (
+                              <button
+                                onClick={() => awardBonusPoint(player.id)}
+                                className="ml-2 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                                title="Award bonus point for creativity"
+                              >
+                                🌟
+                              </button>
+                            )}
                           </div>
                         );
                       })
@@ -178,6 +232,15 @@ export default function DisplayPage() {
                                  `Cooldown (${Math.floor(player.cooldownTimeRemaining / 60)}:${(player.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
                                  'Cooldown'}
                             </span>
+                            {player.status === 'cooldown' && !player.bonusAwarded && (
+                              <button
+                                onClick={() => awardBonusPoint(player.id)}
+                                className="ml-2 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                                title="Award bonus point for creativity"
+                              >
+                                🌟
+                              </button>
+                            )}
                           </div>
                         );
                       })

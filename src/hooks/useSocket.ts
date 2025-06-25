@@ -9,6 +9,7 @@ export interface Player {
   team: string;
   status: 'available' | 'speaking' | 'cooldown';
   cooldownTimeRemaining?: number;
+  bonusAwarded?: boolean;
 }
 
 export interface Team {
@@ -42,6 +43,7 @@ export function useSocket() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [gameEndResult, setGameEndResult] = useState<{winners: string[], finalScores: any} | null>(null);
 
   useEffect(() => {
     // Create socket connection
@@ -94,6 +96,12 @@ export function useSocket() {
       // Handle claim error if needed
     });
 
+    // Game end event
+    socket.on('game-ended', (data: { winners: string[]; finalScores: any }) => {
+      console.log('Game ended:', data);
+      setGameEndResult(data);
+    });
+
     // Cleanup on unmount
     return () => {
       socket.disconnect();
@@ -132,16 +140,25 @@ export function useSocket() {
     }
   };
 
+  const awardBonusPoint = (playerId: string) => {
+    if (socketRef.current) {
+      socketRef.current.emit('award-bonus-point', { playerId });
+    }
+  };
+
   return {
     isConnected,
     gameState,
     currentPlayer,
     registrationError,
+    gameEndResult,
     registerPlayer,
     claimWord,
     startGame,
     nextCard,
     stopGame,
-    clearRegistrationError: () => setRegistrationError(null)
+    awardBonusPoint,
+    clearRegistrationError: () => setRegistrationError(null),
+    clearGameEndResult: () => setGameEndResult(null)
   };
 }
