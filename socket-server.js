@@ -28,7 +28,7 @@ function generateTeams() {
 
 // Game state management
 const gameState = {
-  players: new Map(), // playerId -> { id, name, team, status, socketId, cooldownTimer?, cooldownTimeRemaining?, bonusAwarded?, sessionToken?, disconnectedAt?, pausedSpeechTime?, reconnectionWindow? }
+  players: new Map(), // playerId -> { id, name, team, status, socketId, cooldownTimer?, cooldownTimeRemaining?, bonusAwarded?, sessionToken?, disconnectedAt?, pausedSpeechTime?, reconnectionWindow?, cleanupTimer? }
   teams: generateTeams(),
   currentCard: null,
   gamePhase: 'waiting', // waiting, card-display, speaking, speech-paused, cooldown
@@ -194,10 +194,8 @@ function abandonSpeech(io, playerId) {
   const player = gameState.players.get(playerId);
   if (!player) return;
 
-  // Clear paused speech data
+  // Clear only speech-related data (keep disconnect data for cleanup timer)
   player.pausedSpeechTime = null;
-  player.disconnectedAt = null;
-  player.reconnectionWindow = null;
   
   // Reset global speaking state
   gameState.currentSpeaker = null;
@@ -212,6 +210,35 @@ function abandonSpeech(io, playerId) {
   
   // Start new card automatically
   startNewCard(io);
+}
+
+// Function to remove expired disconnected player from game
+function removeExpiredPlayer(io, playerId) {
+  const player = gameState.players.get(playerId);
+  if (!player) return;
+
+  // Clean up any timers
+  if (player.cooldownTimer) {
+    clearInterval(player.cooldownTimer);
+    player.cooldownTimer = null;
+  }
+  if (player.cleanupTimer) {
+    clearTimeout(player.cleanupTimer);
+    player.cleanupTimer = null;
+  }
+  
+  // Remove from team
+  const teamMembers = gameState.teams[player.team].members;
+  const memberIndex = teamMembers.indexOf(player.id);
+  if (memberIndex > -1) {
+    teamMembers.splice(memberIndex, 1);
+  }
+  
+  // Remove from players
+  gameState.players.delete(player.id);
+  
+  // Broadcast updated state
+  broadcastGameState(io);
 }
 
 // Create HTTP server for Socket.io
@@ -259,6 +286,12 @@ io.on('connection', (socket) => {
     player.socketId = socket.id;
     player.disconnectedAt = null;
     player.reconnectionWindow = null;
+    
+    // Clear cleanup timer since player has reconnected
+    if (player.cleanupTimer) {
+      clearTimeout(player.cleanupTimer);
+      player.cleanupTimer = null;
+    }
 
     // If this was the speaking player who disconnected, resume speech (if speech hasn't been skipped)
     if (gameState.currentSpeaker === playerId && gameState.gamePhase === 'speech-paused' && player.pausedSpeechTime) {
@@ -453,6 +486,13 @@ io.on('connection', (socket) => {
         pausedSpeaker.pausedSpeechTime = null;
         pausedSpeaker.disconnectedAt = null;
         pausedSpeaker.reconnectionWindow = null;
+        
+        // Clear cleanup timer since we're manually skipping
+        if (pausedSpeaker.cleanupTimer) {
+          clearTimeout(pausedSpeaker.cleanupTimer);
+          pausedSpeaker.cleanupTimer = null;
+        }
+        
         if (pausedSpeaker.status === 'disconnected') {
           pausedSpeaker.status = 'available'; // Make them available when they return
         }
@@ -602,6 +642,11 @@ io.on('connection', (socket) => {
           abandonSpeech(io, player.id);
         }, player.reconnectionWindow);
         
+        // Also set cleanup timer to remove player if they don't reconnect
+        player.cleanupTimer = setTimeout(() => {
+          removeExpiredPlayer(io, player.id);
+        }, player.reconnectionWindow);
+        
         // Broadcast paused state
         broadcastGameState(io);
         return;
@@ -612,6 +657,11 @@ io.on('connection', (socket) => {
       player.disconnectedAt = Date.now();
       player.reconnectionWindow = 300000; // 5 minutes for non-speakers
       player.status = 'disconnected';
+      
+      // Set cleanup timer to remove player if they don't reconnect
+      player.cleanupTimer = setTimeout(() => {
+        removeExpiredPlayer(io, player.id);
+      }, player.reconnectionWindow);
       
       // Broadcast updated state
       broadcastGameState(io);
