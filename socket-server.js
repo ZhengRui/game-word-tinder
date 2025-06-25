@@ -1,6 +1,6 @@
 const { createServer } = require('http');
 const { Server } = require('socket.io');
-const { getRandomCard } = require('./word-cards');
+const { getRandomUnusedCard } = require('./word-cards');
 
 const socketPort = 3001;
 
@@ -36,7 +36,8 @@ const gameState = {
   cardTimer: null,
   cardTimeRemaining: 0,
   speechTimer: null,
-  speechTimeRemaining: 0
+  speechTimeRemaining: 0,
+  usedCardIds: [] // Track which cards have been used in current game
 };
 
 // Helper functions
@@ -72,11 +73,14 @@ function startNewCard(io) {
     clearInterval(gameState.cardTimer);
   }
 
-  // Get new random card
-  gameState.currentCard = getRandomCard();
+  // Get new random unused card
+  gameState.currentCard = getRandomUnusedCard(gameState.usedCardIds);
   gameState.gamePhase = 'card-display';
   gameState.cardTimeRemaining = gameConfig.cardDisplayTime;
   gameState.currentSpeaker = null;
+  
+  // Track this card as used
+  gameState.usedCardIds.push(gameState.currentCard.id);
 
   // Start countdown timer
   gameState.cardTimer = setInterval(() => {
@@ -320,6 +324,8 @@ io.on('connection', (socket) => {
     Object.keys(gameState.teams).forEach(teamName => {
       gameState.teams[teamName].score = 0;
     });
+    // Reset used cards tracking for new game
+    gameState.usedCardIds = [];
     startNewCard(io);
   });
 
@@ -381,6 +387,9 @@ io.on('connection', (socket) => {
       
       // Clear all players (they'll need to re-register)
       gameState.players.clear();
+      
+      // Reset used cards when teams change
+      gameState.usedCardIds = [];
     }
     
     // Broadcast updated configuration

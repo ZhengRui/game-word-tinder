@@ -3,169 +3,408 @@
 
 const wordCards = [
   {
-    id: 1,
-    topic: "Leadership Challenges",
-    keywords: ["mentor", "delegate", "inspire", "conflict", "vision"]
+    topic: "Belt Road Impact",
+    keywords: [
+      "infrastructure",
+      "debt trap",
+      "globalization",
+      "developing nations",
+      "trade",
+    ],
   },
   {
-    id: 2,
-    topic: "Public Speaking Fears",
-    keywords: ["confidence", "anxiety", "stage fright", "practice", "courage"]
+    topic: "Is TikTok spyware?",
+    keywords: ["data security", "US-China", "algorithm", "ban", "influence"],
   },
   {
-    id: 3,
-    topic: "Communication Skills",
-    keywords: ["listen", "empathy", "clarity", "feedback", "nonverbal"]
+    topic: "Traditional Medicine Revival",
+    keywords: [
+      "WHO recognition",
+      "acupuncture",
+      "cultural heritage",
+      "modern integration",
+      "controversy",
+    ],
   },
   {
-    id: 4,
-    topic: "Time Management",
-    keywords: ["priority", "deadline", "procrastination", "balance", "efficiency"]
+    topic: "Housing Bubble?",
+    keywords: [
+      "Evergrande",
+      "ghost cities",
+      "mortgage",
+      "speculation",
+      "crisis",
+    ],
   },
   {
-    id: 5,
-    topic: "Career Development",
-    keywords: ["networking", "skills", "promotion", "goals", "growth"]
+    topic: "AI Censorship Necessary",
+    keywords: [
+      "social stability",
+      "Great Firewall",
+      "misinformation",
+      "control",
+      "privacy",
+    ],
+  },
+
+  {
+    topic: "Single's Day Boom",
+    keywords: ["Alibaba", "consumption", "e-commerce", "records", "marketing"],
   },
   {
-    id: 6,
-    topic: "Team Building",
-    keywords: ["collaboration", "trust", "diversity", "synergy", "unity"]
+    topic: "Panda Diplomacy Works",
+    keywords: [
+      "soft power",
+      "conservation",
+      "diplomatic tool",
+      "rentals",
+      "symbolism",
+    ],
   },
   {
-    id: 7,
-    topic: "Innovation at Work",
-    keywords: ["creativity", "change", "technology", "disruption", "adaptation"]
+    topic: "Gaokao Fair?",
+    keywords: [
+      "education equity",
+      "pressure",
+      "rural vs urban",
+      "reform",
+      "future",
+    ],
   },
   {
-    id: 8,
-    topic: "Work-Life Balance",
-    keywords: ["boundaries", "stress", "family", "wellness", "priority"]
+    topic: "Tech Self-Reliance",
+    keywords: ["semiconductors", "Huawei", "sanctions", "innovation", "SMIC"],
   },
   {
-    id: 9,
-    topic: "Customer Service",
-    keywords: ["satisfaction", "complaint", "loyalty", "experience", "solution"]
+    topic: "Three-Child Policy Effective?",
+    keywords: [
+      "aging population",
+      "incentives",
+      "women",
+      "demographics",
+      "resistance",
+    ],
+  },
+
+  {
+    topic: "ESports Dominance",
+    keywords: ["Honor of Kings", "streamers", "billions", "youth", "olympics"],
   },
   {
-    id: 10,
-    topic: "Presentation Skills",
-    keywords: ["slides", "storytelling", "audience", "engagement", "visual"]
+    topic: "Renewables Leader",
+    keywords: ["solar panels", "EVs", "carbon goals", "BYD", "transition"],
   },
   {
-    id: 11,
-    topic: "Networking Events",
-    keywords: ["introduction", "conversation", "business card", "follow-up", "relationship"]
+    topic: "Food Security",
+    keywords: [
+      "pork reserves",
+      "GMO",
+      "farmland",
+      "imports",
+      "self-sufficiency",
+    ],
   },
   {
-    id: 12,
-    topic: "Feedback Culture",
-    keywords: ["constructive", "criticism", "improvement", "praise", "growth"]
+    topic: "Travel Rebound",
+    keywords: ["revenge spending", "ASEAN", "visa-free", "tourism", "economy"],
   },
   {
-    id: 13,
-    topic: "Meeting Management",
-    keywords: ["agenda", "participation", "decision", "action items", "efficiency"]
+    topic: "K-pop vs C-pop",
+    keywords: [
+      "cultural export",
+      "idols",
+      "soft power",
+      "global reach",
+      "competition",
+    ],
+  },
+
+  {
+    topic: "AI Job Threat",
+    keywords: [
+      "manufacturing",
+      "white-collar",
+      "retraining",
+      "efficiency",
+      "inequality",
+    ],
   },
   {
-    id: 14,
-    topic: "Conflict Resolution",
-    keywords: ["mediation", "compromise", "understanding", "perspective", "solution"]
+    topic: "Moon Base Possible",
+    keywords: [
+      "Chang'e program",
+      "helium-3",
+      "space race",
+      "technology",
+      "collaboration",
+    ],
   },
   {
-    id: 15,
-    topic: "Personal Branding",
-    keywords: ["reputation", "expertise", "visibility", "authenticity", "value"]
+    topic: "Aging Crisis",
+    keywords: [
+      "pension",
+      "4-2-1 families",
+      "healthcare",
+      "loneliness",
+      "robots",
+    ],
   },
   {
-    id: 16,
-    topic: "Digital Communication",
-    keywords: ["email", "video call", "social media", "etiquette", "presence"]
+    topic: "Gen Z Values",
+    keywords: [
+      "tang ping",
+      "patriotism",
+      "digital natives",
+      "consumption",
+      "pressure",
+    ],
   },
   {
-    id: 17,
-    topic: "Learning & Development",
-    keywords: ["education", "training", "curiosity", "skill building", "mentorship"]
+    topic: "Pollution Progress?",
+    keywords: ["blue skies", "EV adoption", "coal", "monitoring", "health"],
+  },
+
+  {
+    topic: "Digital Yuan Advantage",
+    keywords: ["cashless", "surveillance", "global", "adoption", "privacy"],
   },
   {
-    id: 18,
-    topic: "Cultural Diversity",
-    keywords: ["inclusion", "perspective", "tradition", "understanding", "respect"]
+    topic: "Manga Influence",
+    keywords: [
+      "anime",
+      "comics",
+      "youth culture",
+      "localization",
+      "competition",
+    ],
   },
   {
-    id: 19,
-    topic: "Goal Setting",
-    keywords: ["objective", "milestone", "achievement", "planning", "motivation"]
+    topic: "Stocks Attractive?",
+    keywords: [
+      "retail investors",
+      "volatility",
+      "regulations",
+      "IPOs",
+      "confidence",
+    ],
   },
   {
-    id: 20,
-    topic: "Change Management",
-    keywords: ["transition", "resistance", "adaptation", "communication", "support"]
+    topic: "English Education Obsession",
+    keywords: ["tutoring", "IELTS", "opportunity", "inequality", "reform"],
   },
   {
-    id: 21,
-    topic: "Workplace Humor",
-    keywords: ["laughter", "morale", "appropriate", "timing", "connection"]
+    topic: "Innovation vs Imitation",
+    keywords: ["patents", "copycats", "startups", "ecosystem", "originality"],
+  },
+
+  {
+    topic: "Work-Life Balance Possible?",
+    keywords: [
+      "996 culture",
+      "burnout",
+      "gig economy",
+      "expectations",
+      "reform",
+    ],
   },
   {
-    id: 22,
-    topic: "Remote Work",
-    keywords: ["virtual", "isolation", "productivity", "technology", "collaboration"]
+    topic: "Should Universities Expand?",
+    keywords: [
+      "employment",
+      "quality",
+      "vocational",
+      "overeducation",
+      "investment",
+    ],
   },
   {
-    id: 23,
-    topic: "Sales Techniques",
-    keywords: ["persuasion", "objection", "closing", "rapport", "value proposition"]
+    topic: "Social Credit Benefits",
+    keywords: [
+      "behavior",
+      "convenience",
+      "blacklist",
+      "western fear",
+      "experiment",
+    ],
   },
   {
-    id: 24,
-    topic: "Crisis Management",
-    keywords: ["emergency", "decision", "communication", "leadership", "recovery"]
+    topic: "Rural Revitalization",
+    keywords: ["poverty", "e-commerce", "migration", "subsidies", "challenges"],
   },
   {
-    id: 25,
-    topic: "Interview Skills",
-    keywords: ["preparation", "questions", "confidence", "first impression", "follow-up"]
+    topic: "Luxury Demand",
+    keywords: [
+      "status",
+      "young buyers",
+      "economic indicator",
+      "imports",
+      "tourism",
+    ],
+  },
+
+  {
+    topic: "Metaverse Hype Real?",
+    keywords: [
+      "virtual reality",
+      "investment",
+      "gaming",
+      "social interaction",
+      "speculation",
+    ],
   },
   {
-    id: 26,
-    topic: "Social Media Impact",
-    keywords: ["influence", "privacy", "professional", "content", "networking"]
+    topic: "Inflation Solutions",
+    keywords: ["stimulus", "supply chains", "consumers", "policy", "global"],
   },
   {
-    id: 27,
-    topic: "Environmental Responsibility",
-    keywords: ["sustainability", "conservation", "impact", "green", "future"]
+    topic: "Remote Work Future",
+    keywords: [
+      "productivity",
+      "isolation",
+      "technology",
+      "culture",
+      "flexibility",
+    ],
   },
   {
-    id: 28,
-    topic: "Health & Wellness",
-    keywords: ["exercise", "nutrition", "mental health", "stress", "energy"]
+    topic: "NFTs Dead?",
+    keywords: ["crypto crash", "art", "scams", "utility", "bubble"],
   },
   {
-    id: 29,
-    topic: "Technology Trends",
-    keywords: ["artificial intelligence", "automation", "innovation", "disruption", "future"]
+    topic: "Universal Basic Income",
+    keywords: ["automation", "poverty", "trials", "cost", "work ethic"],
+  },
+
+  {
+    topic: "Space Tourism Wasteful",
+    keywords: [
+      "billionaires",
+      "environment",
+      "research",
+      "inequality",
+      "colonization",
+    ],
   },
   {
-    id: 30,
-    topic: "Travel Experiences",
-    keywords: ["culture", "adventure", "planning", "memories", "perspective"]
-  }
+    topic: "Fast Fashion Costs",
+    keywords: [
+      "exploitation",
+      "waste",
+      "consumption",
+      "alternatives",
+      "awareness",
+    ],
+  },
+  {
+    topic: "Veganism Trend",
+    keywords: ["health", "environment", "culture", "restaurants", "resistance"],
+  },
+  {
+    topic: "Cryptocurrency Future",
+    keywords: ["regulation", "adoption", "volatility", "blockchain", "banks"],
+  },
+  {
+    topic: "Mental Health Crisis",
+    keywords: ["loneliness", "therapy", "stigma", "social media", "resources"],
+  },
+
+  {
+    topic: "Cancel Culture Harmful?",
+    keywords: [
+      "accountability",
+      "extremism",
+      "free speech",
+      "social media",
+      "consequences",
+    ],
+  },
+  {
+    topic: "Climate Action Delay",
+    keywords: ["politics", "denial", "cost", "protests", "urgency"],
+  },
+  {
+    topic: "Gaming Addiction Real",
+    keywords: ["health", "regulation", "industry", "parents", "esports"],
+  },
+  {
+    topic: "Deepfake Dangers",
+    keywords: [
+      "misinformation",
+      "pornography",
+      "politics",
+      "detection",
+      "ethics",
+    ],
+  },
+  {
+    topic: "Four-Day Week",
+    keywords: [
+      "productivity",
+      "wellbeing",
+      "trials",
+      "resistance",
+      "revolution",
+    ],
+  },
+
+  {
+    topic: "Microplastics Everywhere",
+    keywords: ["health", "water", "food chain", "solutions", "awareness"],
+  },
+  {
+    topic: "TikTok Influence",
+    keywords: ["publishing", "genres", "community", "algorithms", "sales"],
+  },
+  {
+    topic: "Sports Gambling Normalization",
+    keywords: ["addiction", "revenue", "ads", "regulation", "youth"],
+  },
+  {
+    topic: "Minimalism Movement",
+    keywords: [
+      "consumption",
+      "wellbeing",
+      "sustainability",
+      "aesthetics",
+      "capitalism",
+    ],
+  },
+  {
+    topic: "K-Pop Factory",
+    keywords: ["training", "mental health", "fandom", "global", "exploitation"],
+  },
 ];
+
+// Add IDs to cards and create indexed version
+const wordCardsWithIds = wordCards.map((card, index) => ({
+  id: index + 1,
+  ...card,
+}));
 
 // Utility functions for word card management
 function getRandomCard() {
-  const randomIndex = Math.floor(Math.random() * wordCards.length);
-  return wordCards[randomIndex];
+  const randomIndex = Math.floor(Math.random() * wordCardsWithIds.length);
+  return wordCardsWithIds[randomIndex];
 }
 
 function getCardById(id) {
-  return wordCards.find(card => card.id === id);
+  return wordCardsWithIds.find((card) => card.id === id);
 }
 
 function getAllCards() {
-  return [...wordCards];
+  return [...wordCardsWithIds];
+}
+
+function getRandomUnusedCard(usedCardIds = []) {
+  const unusedCards = wordCardsWithIds.filter(
+    (card) => !usedCardIds.includes(card.id)
+  );
+  if (unusedCards.length === 0) {
+    // If all cards have been used, reset and start over
+    return getRandomCard();
+  }
+  const randomIndex = Math.floor(Math.random() * unusedCards.length);
+  return unusedCards[randomIndex];
 }
 
 function getRandomKeywordFromCard(card) {
@@ -174,9 +413,10 @@ function getRandomKeywordFromCard(card) {
 }
 
 module.exports = {
-  wordCards,
+  wordCards: wordCardsWithIds,
   getRandomCard,
   getCardById,
   getAllCards,
-  getRandomKeywordFromCard
+  getRandomUnusedCard,
+  getRandomKeywordFromCard,
 };
