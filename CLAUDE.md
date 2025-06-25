@@ -90,7 +90,15 @@ bun run build
 - **Winner Determination**: Automatic winner detection with tie handling
 - **Game End Modal**: Final scores display with winner announcement
 
-### 🚧 Phase 5+ Optional Features (Not Planned)
+### 🚧 Phase 5: Game Configuration System (NEXT)
+- Customizable number of teams (default: 2)
+- Configurable topic display time (default: 10s)  
+- Adjustable speech duration (default: 60s)
+- Variable cooldown period (default: 120s)
+- Customizable speech points (default: 2)
+- Configurable bonus points (default: 1)
+
+### 🚧 Phase 6+ Optional Features (Not Planned)
 - Enhanced visual transitions and sound effects
 - Live leaderboard updates and audience voting system
 
