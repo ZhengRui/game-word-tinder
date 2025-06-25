@@ -28,16 +28,17 @@ function generateTeams() {
 
 // Game state management
 const gameState = {
-  players: new Map(), // playerId -> { id, name, team, status, socketId, cooldownTimer?, cooldownTimeRemaining?, bonusAwarded? }
+  players: new Map(), // playerId -> { id, name, team, status, socketId, cooldownTimer?, cooldownTimeRemaining?, bonusAwarded?, sessionToken?, disconnectedAt?, pausedSpeechTime?, reconnectionWindow? }
   teams: generateTeams(),
   currentCard: null,
-  gamePhase: 'waiting', // waiting, card-display, speaking, cooldown
+  gamePhase: 'waiting', // waiting, card-display, speaking, speech-paused, cooldown
   currentSpeaker: null,
   cardTimer: null,
   cardTimeRemaining: 0,
   speechTimer: null,
   speechTimeRemaining: 0,
-  usedCardIds: [] // Track which cards have been used in current game
+  usedCardIds: [], // Track which cards have been used in current game
+  pausedSpeechTimeoutTimer: null // Timer for abandoned speech cleanup
 };
 
 // Helper functions
@@ -113,13 +114,14 @@ function stopCardTimer() {
 }
 
 // Speech timer management functions
-function startSpeechTimer(io) {
+function startSpeechTimer(io, customTimeRemaining = null) {
   // Clear any existing speech timer
   if (gameState.speechTimer) {
     clearInterval(gameState.speechTimer);
   }
 
-  gameState.speechTimeRemaining = gameConfig.speechTime;
+  // Use custom time if provided (for resume), otherwise use full speech time
+  gameState.speechTimeRemaining = customTimeRemaining !== null ? customTimeRemaining : gameConfig.speechTime;
 
   gameState.speechTimer = setInterval(() => {
     gameState.speechTimeRemaining--;
@@ -187,6 +189,31 @@ function stopSpeechTimer() {
   }
 }
 
+// Function to abandon a paused speech when player doesn't return
+function abandonSpeech(io, playerId) {
+  const player = gameState.players.get(playerId);
+  if (!player) return;
+
+  // Clear paused speech data
+  player.pausedSpeechTime = null;
+  player.disconnectedAt = null;
+  player.reconnectionWindow = null;
+  
+  // Reset global speaking state
+  gameState.currentSpeaker = null;
+  gameState.gamePhase = 'card-display';
+  gameState.speechTimeRemaining = 0;
+  
+  // Clear timeout timer
+  if (gameState.pausedSpeechTimeoutTimer) {
+    clearTimeout(gameState.pausedSpeechTimeoutTimer);
+    gameState.pausedSpeechTimeoutTimer = null;
+  }
+  
+  // Start new card automatically
+  startNewCard(io);
+}
+
 // Create HTTP server for Socket.io
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -201,6 +228,92 @@ const io = new Server(httpServer, {
 io.on('connection', (socket) => {
   // Send current game state to newly connected client
   socket.emit('game-state-update', getGameStateForClients());
+
+  // Handle player reconnection
+  socket.on('reconnect-player', (data) => {
+    const { playerId, sessionToken, name, team } = data;
+    
+    // Find player by ID and verify session token
+    const player = gameState.players.get(playerId);
+    if (!player || player.sessionToken !== sessionToken) {
+      socket.emit('reconnection-error', { message: 'Invalid session or player not found' });
+      return;
+    }
+
+    // Verify name and team match
+    if (player.name !== name || player.team !== team) {
+      socket.emit('reconnection-error', { message: 'Player details do not match' });
+      return;
+    }
+
+    // Check if this is within reconnection window (if player was disconnected)
+    if (player.disconnectedAt && player.reconnectionWindow) {
+      const timeElapsed = Date.now() - player.disconnectedAt;
+      if (timeElapsed > player.reconnectionWindow) {
+        socket.emit('reconnection-error', { message: 'Reconnection window expired' });
+        return;
+      }
+    }
+
+    // Update socket ID and clear disconnection data
+    player.socketId = socket.id;
+    player.disconnectedAt = null;
+    player.reconnectionWindow = null;
+
+    // If this was the speaking player who disconnected, resume speech (if speech hasn't been skipped)
+    if (gameState.currentSpeaker === playerId && gameState.gamePhase === 'speech-paused' && player.pausedSpeechTime) {
+      gameState.gamePhase = 'speaking';
+      player.status = 'speaking';
+
+      // Clear the abandoned speech timeout
+      if (gameState.pausedSpeechTimeoutTimer) {
+        clearTimeout(gameState.pausedSpeechTimeoutTimer);
+        gameState.pausedSpeechTimeoutTimer = null;
+      }
+
+      // Resume speech timer with the remaining time
+      startSpeechTimer(io, player.pausedSpeechTime);
+      player.pausedSpeechTime = null;
+      
+      socket.emit('speech-resumed', { remainingTime: gameState.speechTimeRemaining });
+    } else {
+      // For non-speaking players, restore their proper status
+      if (player.status === 'disconnected') {
+        // Determine correct status based on player state
+        if (player.cooldownTimeRemaining && player.cooldownTimeRemaining > 0) {
+          player.status = 'cooldown';
+          // Restart their cooldown timer if they still have time remaining
+          if (!player.cooldownTimer) {
+            player.cooldownTimer = setInterval(() => {
+              player.cooldownTimeRemaining--;
+              
+              // Broadcast cooldown update
+              broadcastGameState(io);
+
+              if (player.cooldownTimeRemaining <= 0) {
+                // Cooldown finished, return to available
+                clearInterval(player.cooldownTimer);
+                player.cooldownTimer = null;
+                player.cooldownTimeRemaining = 0;
+                player.status = 'available';
+                player.bonusAwarded = false;
+                
+                broadcastGameState(io);
+              }
+            }, 1000);
+          }
+        } else {
+          player.status = 'available';
+        }
+      }
+    }
+
+    // Confirm reconnection to player
+    socket.emit('reconnection-success', { playerId, name, team });
+    
+    // Broadcast updated state to all clients
+    broadcastGameState(io);
+  });
 
   // Handle player registration
   socket.on('register-player', (data) => {
@@ -225,13 +338,15 @@ io.on('connection', (socket) => {
     }
 
     // Create player
-    const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const playerId = `player_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     const player = {
       id: playerId,
       name,
       team,
       status: 'available',
-      socketId: socket.id
+      socketId: socket.id,
+      sessionToken
     };
 
     // Add to game state
@@ -239,7 +354,7 @@ io.on('connection', (socket) => {
     gameState.teams[team].members.push(playerId);
 
     // Confirm registration to player
-    socket.emit('registration-success', { playerId, name, team });
+    socket.emit('registration-success', { playerId, name, team, sessionToken });
     
     // Broadcast updated state to all clients
     broadcastGameState(io);
@@ -330,6 +445,30 @@ io.on('connection', (socket) => {
   });
 
   socket.on('next-card', () => {
+    // If we're in speech-paused state, abandon the paused speech before starting new card
+    if (gameState.gamePhase === 'speech-paused') {
+      // Find the paused speaker and reset their state
+      const pausedSpeaker = gameState.players.get(gameState.currentSpeaker);
+      if (pausedSpeaker) {
+        pausedSpeaker.pausedSpeechTime = null;
+        pausedSpeaker.disconnectedAt = null;
+        pausedSpeaker.reconnectionWindow = null;
+        if (pausedSpeaker.status === 'disconnected') {
+          pausedSpeaker.status = 'available'; // Make them available when they return
+        }
+      }
+      
+      // Clear the abandoned speech timeout
+      if (gameState.pausedSpeechTimeoutTimer) {
+        clearTimeout(gameState.pausedSpeechTimeoutTimer);
+        gameState.pausedSpeechTimeoutTimer = null;
+      }
+      
+      // Reset speaking state
+      gameState.currentSpeaker = null;
+      gameState.speechTimeRemaining = 0;
+    }
+    
     startNewCard(io);
   });
 
@@ -379,9 +518,6 @@ io.on('connection', (socket) => {
     
     // Regenerate teams if numberOfTeams changed
     if (config.numberOfTeams) {
-      // Save existing players and clear teams
-      const allPlayers = Array.from(gameState.players.values());
-      
       // Generate new team structure
       gameState.teams = generateTeams();
       
@@ -432,7 +568,7 @@ io.on('connection', (socket) => {
 
   // Handle disconnection
   socket.on('disconnect', () => {
-    // Find and remove player
+    // Find player by socket ID
     const player = Array.from(gameState.players.values()).find(p => p.socketId === socket.id);
     if (player) {
       const wasSpeaking = gameState.currentSpeaker === player.id;
@@ -443,30 +579,39 @@ io.on('connection', (socket) => {
         player.cooldownTimer = null;
       }
       
-      // Remove from team first
-      const teamMembers = gameState.teams[player.team].members;
-      const memberIndex = teamMembers.indexOf(player.id);
-      if (memberIndex > -1) {
-        teamMembers.splice(memberIndex, 1);
-      }
-      
-      // Remove from players
-      gameState.players.delete(player.id);
-      
-      // If the disconnecting player was the current speaker, reset game state
-      if (wasSpeaking) {
-        // Stop speech timer and reset speaking state
-        stopSpeechTimer();
-        gameState.currentSpeaker = null;
-        gameState.gamePhase = 'card-display';
-        
-        // If there's still time on the card, continue the timer
-        // If not, start a new card
-        if (gameState.cardTimeRemaining <= 0) {
-          startNewCard(io);
-          return; // startNewCard will handle broadcasting
+      // If the disconnecting player was the current speaker, pause the speech
+      if (wasSpeaking && gameState.gamePhase === 'speaking') {
+        // Stop speech timer and save remaining time
+        if (gameState.speechTimer) {
+          clearInterval(gameState.speechTimer);
+          gameState.speechTimer = null;
         }
+        
+        // Store paused speech state
+        player.pausedSpeechTime = gameState.speechTimeRemaining;
+        player.disconnectedAt = Date.now();
+        player.reconnectionWindow = 120000; // 2 minutes to reconnect
+        player.status = 'disconnected';
+        
+        // Change game phase to indicate speech is paused
+        gameState.gamePhase = 'speech-paused';
+        gameState.speechTimeRemaining = 0;
+        
+        // Set timeout to abandon speech if player doesn't return
+        gameState.pausedSpeechTimeoutTimer = setTimeout(() => {
+          abandonSpeech(io, player.id);
+        }, player.reconnectionWindow);
+        
+        // Broadcast paused state
+        broadcastGameState(io);
+        return;
       }
+      
+      // For non-speaking players, mark as disconnected but keep in game
+      // They can reconnect later during the same session
+      player.disconnectedAt = Date.now();
+      player.reconnectionWindow = 300000; // 5 minutes for non-speakers
+      player.status = 'disconnected';
       
       // Broadcast updated state
       broadcastGameState(io);

@@ -7,7 +7,7 @@ export interface Player {
   id: string;
   name: string;
   team: string;
-  status: 'available' | 'speaking' | 'cooldown';
+  status: 'available' | 'speaking' | 'cooldown' | 'disconnected';
   cooldownTimeRemaining?: number;
   bonusAwarded?: boolean;
 }
@@ -37,7 +37,7 @@ export interface GameState {
   teams: Record<string, Team>;
   config: GameConfig;
   currentCard: WordCard | null;
-  gamePhase: 'waiting' | 'card-display' | 'speaking' | 'cooldown';
+  gamePhase: 'waiting' | 'card-display' | 'speaking' | 'speech-paused' | 'cooldown';
   currentSpeaker: string | null;
   cardTimeRemaining: number;
   speechTimeRemaining: number;
@@ -51,8 +51,24 @@ export function useSocket() {
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const [gameEndResult, setGameEndResult] = useState<{winners: string[], finalScores: Record<string, Team>} | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
+  const [reconnectionError, setReconnectionError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check for existing session in localStorage
+    const existingSession = typeof window !== 'undefined' ? localStorage.getItem('wordTinderSession') : null;
+    let shouldReconnect = false;
+    let sessionData = null;
+
+    if (existingSession) {
+      try {
+        sessionData = JSON.parse(existingSession);
+        shouldReconnect = true;
+      } catch {
+        // Invalid session data, remove it
+        localStorage.removeItem('wordTinderSession');
+      }
+    }
+
     // Create socket connection - try env var first, then dynamic hostname
     let socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
     
@@ -78,6 +94,11 @@ export function useSocket() {
     // Connection event handlers
     socket.on('connect', () => {
       setIsConnected(true);
+      
+      // Attempt reconnection if we have session data
+      if (shouldReconnect && sessionData) {
+        socket.emit('reconnect-player', sessionData);
+      }
     });
 
     socket.on('disconnect', () => {
@@ -90,8 +111,33 @@ export function useSocket() {
     });
 
     // Registration events
-    socket.on('registration-success', (data: { playerId: string; name: string; team: string }) => {
+    socket.on('registration-success', (data: { playerId: string; name: string; team: string; sessionToken: string }) => {
       setRegistrationError(null);
+      setCurrentPlayer({
+        id: data.playerId,
+        name: data.name,
+        team: data.team,
+        status: 'available'
+      });
+      
+      // Save session data to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('wordTinderSession', JSON.stringify({
+          playerId: data.playerId,
+          name: data.name,
+          team: data.team,
+          sessionToken: data.sessionToken
+        }));
+      }
+    });
+
+    socket.on('registration-error', (data: { message: string }) => {
+      setRegistrationError(data.message);
+    });
+
+    // Reconnection events
+    socket.on('reconnection-success', (data: { playerId: string; name: string; team: string }) => {
+      setReconnectionError(null);
       setCurrentPlayer({
         id: data.playerId,
         name: data.name,
@@ -100,8 +146,17 @@ export function useSocket() {
       });
     });
 
-    socket.on('registration-error', (data: { message: string }) => {
-      setRegistrationError(data.message);
+    socket.on('reconnection-error', (data: { message: string }) => {
+      setReconnectionError(data.message);
+      // Clear invalid session data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('wordTinderSession');
+      }
+    });
+
+    socket.on('speech-resumed', (data: { remainingTime: number }) => {
+      // Speech has been resumed after reconnection
+      console.log(`Speech resumed with ${data.remainingTime} seconds remaining`);
     });
 
     // Claim events
@@ -179,6 +234,7 @@ export function useSocket() {
     gameState,
     currentPlayer,
     registrationError,
+    reconnectionError,
     gameEndResult,
     configError,
     registerPlayer,
@@ -189,7 +245,14 @@ export function useSocket() {
     awardBonusPoint,
     updateConfig,
     clearRegistrationError: () => setRegistrationError(null),
+    clearReconnectionError: () => setReconnectionError(null),
     clearGameEndResult: () => setGameEndResult(null),
-    clearConfigError: () => setConfigError(null)
+    clearConfigError: () => setConfigError(null),
+    clearSession: () => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('wordTinderSession');
+      }
+      setCurrentPlayer(null);
+    }
   };
 }

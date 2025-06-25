@@ -332,6 +332,26 @@ export default function DisplayPage() {
                       </div>
                     </>
                   )}
+                  {gameState.gamePhase === "speech-paused" && (
+                    <>
+                      <div className="text-2xl lg:text-4xl font-bold text-orange-200 animate-pulse">
+                        ⏸️ SPEECH PAUSED
+                      </div>
+                      <div className="mt-4 lg:mt-6 text-xl lg:text-2xl text-orange-200">
+                        {(() => {
+                          const speaker = gameState.players.find(
+                            (p) => p.id === gameState.currentSpeaker
+                          );
+                          return speaker
+                            ? `${speaker.name} (${speaker.team}) disconnected`
+                            : "Speaker disconnected";
+                        })()}
+                      </div>
+                      <div className="mt-2 text-lg lg:text-xl text-orange-300">
+                        Waiting for reconnection...
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
@@ -404,6 +424,8 @@ export default function DisplayPage() {
                                               ? "text-green-400"
                                               : player.status === "speaking"
                                               ? "text-yellow-400"
+                                              : player.status === "disconnected"
+                                              ? "text-orange-400"
                                               : "text-red-400"
                                           }`}
                                         >
@@ -412,6 +434,8 @@ export default function DisplayPage() {
                                               ? "✓"
                                               : player.status === "speaking"
                                               ? "🎤"
+                                              : player.status === "disconnected"
+                                              ? "📱"
                                               : "⏱"}
                                           </span>
                                           <span className="text-sm lg:text-base font-medium ml-2 truncate">
@@ -422,6 +446,8 @@ export default function DisplayPage() {
                                               ? "Available"
                                               : player.status === "speaking"
                                               ? "Speaking"
+                                              : player.status === "disconnected"
+                                              ? "Disconnected"
                                               : player.status === "cooldown" &&
                                                 player.cooldownTimeRemaining
                                               ? `Cooldown (${Math.floor(
@@ -488,12 +514,16 @@ export default function DisplayPage() {
             </button>
           </>
         )}
-        {gameState?.gamePhase === "card-display" && (
+        {(gameState?.gamePhase === "card-display" || gameState?.gamePhase === "speech-paused") && (
           <button
             onClick={nextCard}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-lg font-semibold transition-colors text-sm lg:text-base"
+            className={`px-4 lg:px-6 py-2 lg:py-3 rounded-lg font-semibold transition-colors text-sm lg:text-base ${
+              gameState?.gamePhase === "speech-paused"
+                ? "bg-orange-600 hover:bg-orange-700 text-white"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
           >
-            ⏭️ Next Card
+            {gameState?.gamePhase === "speech-paused" ? "⏭️ Skip Paused Speech" : "⏭️ Next Card"}
           </button>
         )}
         {gameState?.gamePhase !== "waiting" && (

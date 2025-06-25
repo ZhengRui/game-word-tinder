@@ -53,7 +53,7 @@ A complete real-time multiplayer word game for Toastmasters meetings that encour
 
 ## 📊 Implementation Status
 
-### ✅ **COMPLETE** - Core Game Features (Phase 1-5)
+### ✅ **COMPLETE** - Core Game Features (Phase 1-6)
 - **Real-time Foundation:** Player registration, team tracking, connection management
 - **Word Card System:** 30 Toastmasters topics with random selection and auto-skip
 - **Timer Systems:** Configurable card display, speech, and cooldown timers
@@ -71,8 +71,14 @@ A complete real-time multiplayer word game for Toastmasters meetings that encour
   - **Cooldown period:** Variable cooldown length (60-600s, default: 120s)
   - **Speech points:** Configurable speech scoring (1-10, default: 2)
   - **Bonus points:** Adjustable bonus awards (1-5, default: 1)
+- **Speech Pause/Resume System:** Robust disconnect handling for speaking players
+  - **Session-based reconnection:** localStorage tokens for reliable player identification
+  - **Automatic pause/resume:** Speech timer pauses when speaker disconnects, resumes from exact time
+  - **Admin skip control:** "Skip Paused Speech" button to continue game without waiting
+  - **Visual feedback:** Clear indicators for paused state and disconnected players
+  - **Smart timeout:** 2-minute reconnection window with automatic abandonment
 
-### 📋 Optional Features (Phase 6+ - Not Planned)
+### 📋 Optional Features (Phase 7+ - Not Planned)
 - Enhanced visual transitions and animations
 - Sound effects for game events
 - Live audience voting system

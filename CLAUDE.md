@@ -38,10 +38,11 @@ bun run build
 
 ### Key Socket Events
 - `register-player` - Player joins team
+- `reconnect-player` - Player reconnects with session token
 - `claim-word` - Player attempts to claim current word card
 - `update-config` - Admin updates game configuration
 - `game-state-update` - Server broadcasts state to all clients
-- `registration-error` / `claim-error` / `config-error` - Error handling
+- `registration-error` / `claim-error` / `config-error` / `reconnection-error` - Error handling
 
 ### Game State Structure
 ```typescript
@@ -50,7 +51,7 @@ bun run build
   teams: Record<string, { members: string[], score: number }>; // Dynamic teams based on config
   config: GameConfig; // Configurable game settings
   currentCard: any;    // Current word card
-  gamePhase: 'waiting' | 'card-display' | 'speaking' | 'cooldown';
+  gamePhase: 'waiting' | 'card-display' | 'speaking' | 'speech-paused' | 'cooldown';
   currentSpeaker: string | null;
 }
 ```
@@ -64,12 +65,12 @@ bun run build
 ### UI Patterns
 - **Dark theme**: Gray-900 backgrounds throughout
 - **Team colors**: Red (Team A), Blue (Team B), Green (Team C)
-- **Status indicators**: ✓ (available), 🎤 (speaking), ⏱ (cooldown)
+- **Status indicators**: ✓ (available), 🎤 (speaking), ⏱ (cooldown), 📱 (disconnected)
 - **Tailwind CSS**: Utility-first styling
 
 ## Implementation Status
 
-### ✅ Phase 1, 2, 3, 4 & 5 Complete
+### ✅ Phase 1, 2, 3, 4, 5 & 6 Complete
 - **Real-time Foundation**: Player registration, team tracking, connection management
 - **Word Card System**: 30 Toastmasters topics with random selection (word-cards.js)
 - **Configurable Timers**: Auto-skip cards with customizable display time
@@ -96,8 +97,16 @@ bun run build
   - Configurable bonus points (1-5, default: 1)
   - Dynamic team generation based on configuration
   - Real-time configuration updates with input validation
+- **Speech Pause/Resume System**: Robust disconnect handling for speaking players
+  - Session-based reconnection with localStorage tokens
+  - Automatic speech timer pause when speaking player disconnects
+  - Speech resume from exact remaining time when player reconnects
+  - 2-minute reconnection window with automatic abandonment
+  - Admin control to skip paused speeches and continue game
+  - Visual indicators for paused state and disconnected players
+  - Proper status restoration for all player types after reconnection
 
-### 📋 Phase 6+ Optional Features (Not Planned)
+### 📋 Phase 7+ Optional Features (Not Planned)
 - Enhanced visual transitions and sound effects
 - Live leaderboard updates and audience voting system
 - Game session analytics and reporting

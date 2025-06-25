@@ -10,10 +10,12 @@ export default function PlayPage() {
     isConnected, 
     currentPlayer, 
     gameState, 
-    registrationError, 
+    registrationError,
+    reconnectionError, 
     registerPlayer, 
     claimWord,
-    clearRegistrationError 
+    clearRegistrationError,
+    clearReconnectionError
   } = useSocket();
 
   const isRegistered = !!currentPlayer;
@@ -150,11 +152,31 @@ export default function PlayPage() {
                   🎤 {Math.floor(gameState.speechTimeRemaining / 60)}:{(gameState.speechTimeRemaining % 60).toString().padStart(2, '0')}
                 </div>
               )}
+              {gameState.gamePhase === 'speech-paused' && (
+                <div className="text-2xl font-bold text-orange-400 animate-pulse">
+                  ⏸️ PAUSED
+                </div>
+              )}
             </>
           ) : (
             <div className="text-gray-500">Waiting for next topic...</div>
           )}
         </div>
+
+        {/* Reconnection Error */}
+        {reconnectionError && (
+          <div className="bg-orange-900 text-orange-300 p-3 rounded border border-orange-700 mb-6">
+            <div className="flex justify-between items-center">
+              <span>{reconnectionError}</span>
+              <button
+                onClick={clearReconnectionError}
+                className="text-orange-200 hover:text-white ml-2"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Claim Button */}
         <button
@@ -168,6 +190,7 @@ export default function PlayPage() {
         >
           {!isConnected ? 'DISCONNECTED' :
            playerStatus === 'speaking' ? 'YOU ARE SPEAKING!' :
+           playerStatus === 'disconnected' ? 'RECONNECTING...' :
            playerStatus === 'cooldown' ? 
              (currentGamePlayer?.cooldownTimeRemaining ? 
                `COOLDOWN (${Math.floor(currentGamePlayer.cooldownTimeRemaining / 60)}:${(currentGamePlayer.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
@@ -200,6 +223,8 @@ export default function PlayPage() {
                   const speaker = gameState.players.find(p => p.id === gameState.currentSpeaker);
                   return speaker ? `${speaker.name} (${speaker.team}) speaking` : 'Someone speaking';
                 })() :
+              gameState?.gamePhase === 'speech-paused' ? 
+                (currentPlayer?.id === gameState.currentSpeaker ? 'YOUR SPEECH IS PAUSED' : 'Speech paused (speaker disconnected)') :
               gameState?.gamePhase === 'cooldown' ? 'Round finished' : 'Loading...'
             }
           </div>
