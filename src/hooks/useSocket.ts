@@ -49,7 +49,7 @@ export function useSocket() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
-  const [gameEndResult, setGameEndResult] = useState<{winners: string[], finalScores: any} | null>(null);
+  const [gameEndResult, setGameEndResult] = useState<{winners: string[], finalScores: Record<string, Team>} | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -90,16 +90,16 @@ export function useSocket() {
     });
 
     // Claim events
-    socket.on('word-claimed', (data: { playerId: string; playerName: string; team: string }) => {
+    socket.on('word-claimed', () => {
       // Word successfully claimed
     });
 
-    socket.on('claim-error', (data: { message: string }) => {
+    socket.on('claim-error', () => {
       // Handle claim error if needed
     });
 
     // Game end event
-    socket.on('game-ended', (data: { winners: string[]; finalScores: any }) => {
+    socket.on('game-ended', (data: { winners: string[]; finalScores: Record<string, Team> }) => {
       setGameEndResult(data);
     });
 
