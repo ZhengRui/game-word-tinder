@@ -53,8 +53,21 @@ export function useSocket() {
   const [configError, setConfigError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Create socket connection using environment variable
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+    // Create socket connection - try env var first, then dynamic hostname
+    let socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+    
+    // Fallback to dynamic hostname if env var not set
+    if (!socketUrl && typeof window !== 'undefined') {
+      socketUrl = `http://${window.location.hostname}:3001`;
+    }
+    
+    // Final fallback to localhost
+    socketUrl = socketUrl || 'http://localhost:3001';
+    
+    // Debug logging
+    console.log('🔌 Attempting to connect to:', socketUrl);
+    console.log('🌐 Environment variable:', process.env.NEXT_PUBLIC_SOCKET_URL);
+    console.log('🏠 Current hostname:', typeof window !== 'undefined' ? window.location.hostname : 'server-side');
     
     socketRef.current = io(socketUrl, {
       transports: ['websocket', 'polling']
