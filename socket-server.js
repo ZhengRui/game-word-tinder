@@ -191,7 +191,7 @@ function stopSpeechTimer() {
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    origin: "*", // Allow all origins for development
     methods: ['GET', 'POST'],
     credentials: true
   }
