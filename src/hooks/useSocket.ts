@@ -53,8 +53,10 @@ export function useSocket() {
   const [configError, setConfigError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Create socket connection
-    socketRef.current = io('http://localhost:3001', {
+    // Create socket connection using environment variable
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+    
+    socketRef.current = io(socketUrl, {
       transports: ['websocket', 'polling']
     });
 
