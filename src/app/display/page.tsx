@@ -17,16 +17,23 @@ export default function DisplayPage() {
                   <p className="font-semibold mb-2">Keywords:</p>
                   <p className="leading-relaxed">{gameState.currentCard.keywords.join(' • ')}</p>
                 </div>
-                <div className={`text-2xl lg:text-4xl font-bold ${gameState.cardTimeRemaining <= 3 ? 'text-red-200 animate-pulse' : 'text-blue-200'}`}>
-                  ⏰ {gameState.cardTimeRemaining}s
-                </div>
-                {gameState.currentSpeaker && (
-                  <div className="mt-4 lg:mt-6 text-xl lg:text-2xl text-yellow-200">
-                    🎤 {(() => {
-                      const speaker = gameState.players.find(p => p.id === gameState.currentSpeaker);
-                      return speaker ? `${speaker.name} (${speaker.team}) is speaking!` : 'Someone is speaking!';
-                    })()}
+                {gameState.gamePhase === 'card-display' && (
+                  <div className={`text-2xl lg:text-4xl font-bold ${gameState.cardTimeRemaining <= 3 ? 'text-red-200 animate-pulse' : 'text-blue-200'}`}>
+                    ⏰ {gameState.cardTimeRemaining}s
                   </div>
+                )}
+                {gameState.gamePhase === 'speaking' && (
+                  <>
+                    <div className={`text-2xl lg:text-4xl font-bold ${gameState.speechTimeRemaining <= 10 ? 'text-red-200 animate-pulse' : 'text-green-200'}`}>
+                      🎤 {Math.floor(gameState.speechTimeRemaining / 60)}:{(gameState.speechTimeRemaining % 60).toString().padStart(2, '0')}
+                    </div>
+                    <div className="mt-4 lg:mt-6 text-xl lg:text-2xl text-yellow-200">
+                      {(() => {
+                        const speaker = gameState.players.find(p => p.id === gameState.currentSpeaker);
+                        return speaker ? `${speaker.name} (${speaker.team}) is speaking!` : 'Someone is speaking!';
+                      })()}
+                    </div>
+                  </>
                 )}
               </>
             ) : (
@@ -76,7 +83,10 @@ export default function DisplayPage() {
                             </span>
                             <span className="text-xs lg:text-sm text-gray-400 ml-2 lg:ml-3">
                               {player.status === 'available' ? 'Available' :
-                               player.status === 'speaking' ? 'Speaking' : 'Cooldown'}
+                               player.status === 'speaking' ? 'Speaking' : 
+                               player.status === 'cooldown' && player.cooldownTimeRemaining ? 
+                                 `Cooldown (${Math.floor(player.cooldownTimeRemaining / 60)}:${(player.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
+                                 'Cooldown'}
                             </span>
                           </div>
                         );
@@ -111,7 +121,10 @@ export default function DisplayPage() {
                             </span>
                             <span className="text-xs lg:text-sm text-gray-400 ml-2 lg:ml-3">
                               {player.status === 'available' ? 'Available' :
-                               player.status === 'speaking' ? 'Speaking' : 'Cooldown'}
+                               player.status === 'speaking' ? 'Speaking' : 
+                               player.status === 'cooldown' && player.cooldownTimeRemaining ? 
+                                 `Cooldown (${Math.floor(player.cooldownTimeRemaining / 60)}:${(player.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
+                                 'Cooldown'}
                             </span>
                           </div>
                         );
@@ -146,7 +159,10 @@ export default function DisplayPage() {
                             </span>
                             <span className="text-xs lg:text-sm text-gray-400 ml-2 lg:ml-3">
                               {player.status === 'available' ? 'Available' :
-                               player.status === 'speaking' ? 'Speaking' : 'Cooldown'}
+                               player.status === 'speaking' ? 'Speaking' : 
+                               player.status === 'cooldown' && player.cooldownTimeRemaining ? 
+                                 `Cooldown (${Math.floor(player.cooldownTimeRemaining / 60)}:${(player.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
+                                 'Cooldown'}
                             </span>
                           </div>
                         );

@@ -6,7 +6,7 @@ const socketPort = 3001;
 
 // Game state management
 const gameState = {
-  players: new Map(), // playerId -> { id, name, team, status, socketId }
+  players: new Map(), // playerId -> { id, name, team, status, socketId, cooldownTimer?, cooldownTimeRemaining? }
   teams: {
     'Team A': { members: [], score: 0 },
     'Team B': { members: [], score: 0 },
@@ -16,7 +16,9 @@ const gameState = {
   gamePhase: 'waiting', // waiting, card-display, speaking, cooldown
   currentSpeaker: null,
   cardTimer: null,
-  cardTimeRemaining: 0
+  cardTimeRemaining: 0,
+  speechTimer: null,
+  speechTimeRemaining: 0
 };
 
 // Helper functions
@@ -26,13 +28,15 @@ function getGameStateForClients() {
       id: p.id,
       name: p.name,
       team: p.team,
-      status: p.status
+      status: p.status,
+      cooldownTimeRemaining: p.cooldownTimeRemaining || 0
     })),
     teams: gameState.teams,
     currentCard: gameState.currentCard,
     gamePhase: gameState.gamePhase,
     currentSpeaker: gameState.currentSpeaker,
-    cardTimeRemaining: gameState.cardTimeRemaining
+    cardTimeRemaining: gameState.cardTimeRemaining,
+    speechTimeRemaining: gameState.speechTimeRemaining
   };
 }
 
@@ -85,6 +89,81 @@ function stopCardTimer() {
   if (gameState.cardTimer) {
     clearInterval(gameState.cardTimer);
     gameState.cardTimer = null;
+  }
+}
+
+// Speech timer management functions
+function startSpeechTimer(io) {
+  // Clear any existing speech timer
+  if (gameState.speechTimer) {
+    clearInterval(gameState.speechTimer);
+  }
+
+  gameState.speechTimeRemaining = 60; // 1 minute for speech
+  console.log(`🎤 Starting 60-second speech timer`);
+
+  gameState.speechTimer = setInterval(() => {
+    gameState.speechTimeRemaining--;
+    
+    // Broadcast speech timer update
+    broadcastGameState(io);
+
+    if (gameState.speechTimeRemaining <= 0) {
+      console.log('⏱️ Speech time ended, starting cooldown');
+      endSpeechAndStartCooldown(io);
+    }
+  }, 1000);
+}
+
+function endSpeechAndStartCooldown(io) {
+  // Stop speech timer
+  if (gameState.speechTimer) {
+    clearInterval(gameState.speechTimer);
+    gameState.speechTimer = null;
+  }
+
+  const speaker = gameState.players.get(gameState.currentSpeaker);
+  if (speaker) {
+    // Change speaker status to cooldown
+    speaker.status = 'cooldown';
+    speaker.cooldownTimeRemaining = 180; // 3 minutes cooldown
+    
+    console.log(`❄️ ${speaker.name} entered 3-minute cooldown`);
+
+    // Start individual cooldown timer for this player
+    speaker.cooldownTimer = setInterval(() => {
+      speaker.cooldownTimeRemaining--;
+      
+      // Broadcast cooldown update
+      broadcastGameState(io);
+
+      if (speaker.cooldownTimeRemaining <= 0) {
+        // Cooldown finished, return to available
+        clearInterval(speaker.cooldownTimer);
+        speaker.cooldownTimer = null;
+        speaker.cooldownTimeRemaining = 0;
+        speaker.status = 'available';
+        
+        console.log(`✅ ${speaker.name} cooldown finished - now available`);
+        broadcastGameState(io);
+      }
+    }, 1000);
+  }
+
+  // Reset global speaking state and start new card
+  gameState.currentSpeaker = null;
+  gameState.gamePhase = 'card-display';
+  gameState.speechTimeRemaining = 0;
+  
+  // Start new card automatically
+  startNewCard(io);
+}
+
+function stopSpeechTimer() {
+  if (gameState.speechTimer) {
+    clearInterval(gameState.speechTimer);
+    gameState.speechTimer = null;
+    gameState.speechTimeRemaining = 0;
   }
 }
 
@@ -176,7 +255,13 @@ io.on('connection', (socket) => {
       gameState.currentSpeaker = playerId;
       gameState.gamePhase = 'speaking';
       
+      // Stop card timer since word was claimed
+      stopCardTimer();
+      
       console.log(`🎤 ${player.name} claimed the word!`);
+      
+      // Start 1-minute speech timer
+      startSpeechTimer(io);
       
       // Broadcast claim success
       io.emit('word-claimed', {
@@ -205,10 +290,23 @@ io.on('connection', (socket) => {
   socket.on('stop-game', () => {
     console.log('⏹️ Game stopped by admin');
     stopCardTimer();
+    stopSpeechTimer();
+    
+    // Clear all player cooldown timers
+    for (const player of gameState.players.values()) {
+      if (player.cooldownTimer) {
+        clearInterval(player.cooldownTimer);
+        player.cooldownTimer = null;
+      }
+      player.cooldownTimeRemaining = 0;
+      player.status = 'available';
+    }
+    
     gameState.gamePhase = 'waiting';
     gameState.currentCard = null;
     gameState.currentSpeaker = null;
     gameState.cardTimeRemaining = 0;
+    gameState.speechTimeRemaining = 0;
     broadcastGameState(io);
   });
 
@@ -220,6 +318,12 @@ io.on('connection', (socket) => {
     const player = Array.from(gameState.players.values()).find(p => p.socketId === socket.id);
     if (player) {
       const wasSpeaking = gameState.currentSpeaker === player.id;
+      
+      // Clean up player's cooldown timer if exists
+      if (player.cooldownTimer) {
+        clearInterval(player.cooldownTimer);
+        player.cooldownTimer = null;
+      }
       
       // Remove from team first
       const teamMembers = gameState.teams[player.team].members;
@@ -237,7 +341,8 @@ io.on('connection', (socket) => {
       if (wasSpeaking) {
         console.log(`🎤 Current speaker ${player.name} disconnected - resetting game state`);
         
-        // Reset speaking state and return to card display
+        // Stop speech timer and reset speaking state
+        stopSpeechTimer();
         gameState.currentSpeaker = null;
         gameState.gamePhase = 'card-display';
         

@@ -71,21 +71,25 @@ bun run build
 
 ## Implementation Status
 
-### ✅ Phase 1 & 2 Complete
+### ✅ Phase 1, 2 & 3 Complete
 - **Real-time Foundation**: Player registration, team tracking, connection management
 - **Word Card System**: 30 Toastmasters topics with random selection (word-cards.js)
 - **10-Second Timer**: Auto-skip cards if not claimed within time limit
 - **Claiming Mechanism**: Real-time first-come-first-served claiming with validation
+- **Speech Timer System**: 1-minute countdown starting when player claims topic
+- **Cooldown System**: 3-minute individual cooldown timers for players after speaking
+- **Auto-Transitions**: Automatic progression between game phases (claim → speak → cooldown → available)
 - **Speaker Management**: Clear identification of who claimed (name + team display)
 - **Disconnect Handling**: Proper cleanup when speaking player disconnects/refreshes
 - **Admin Controls**: Start Game, Next Card, Stop Game buttons on display interface
+- **Timer Displays**: Real-time countdown timers on both mobile and display interfaces
+- **Button States**: Claim buttons properly disabled with countdown during cooldown
 - **Responsive Design**: Mobile-optimized layouts with fixed-height containers
 
-### 🚧 Phase 3+ Not Implemented
-- 1-minute speech timer with auto-progression to cooldown
-- 3-minute cooldown timers for players after speaking
+### 🚧 Phase 4+ Not Implemented
 - Scoring system with team leaderboards and point tracking
 - Enhanced visual transitions and sound effects
+- Live leaderboard updates and audience voting system
 
 ## Development Notes
 

@@ -35,8 +35,10 @@ export default function PlayPage() {
     }
   }, [playerName, selectedTeam, registrationError, clearRegistrationError]);
 
-  const canClaim = currentPlayer?.status === 'available' && gameState?.gamePhase === 'card-display';
-  const playerStatus = currentPlayer?.status || 'disconnected';
+  // Find current player in game state to get latest status including cooldown timer
+  const currentGamePlayer = gameState?.players.find(p => p.id === currentPlayer?.id);
+  const playerStatus = currentGamePlayer?.status || currentPlayer?.status || 'disconnected';
+  const canClaim = playerStatus === 'available' && gameState?.gamePhase === 'card-display';
 
   if (!isRegistered) {
     return (
@@ -140,9 +142,14 @@ export default function PlayPage() {
               <div className="text-sm text-gray-400 mb-3">
                 Keywords: {gameState.currentCard.keywords.join(' • ')}
               </div>
-              {gameState.cardTimeRemaining > 0 && (
+              {gameState.gamePhase === 'card-display' && gameState.cardTimeRemaining > 0 && (
                 <div className={`text-2xl font-bold ${gameState.cardTimeRemaining <= 3 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`}>
                   ⏰ {gameState.cardTimeRemaining}s
+                </div>
+              )}
+              {gameState.gamePhase === 'speaking' && (
+                <div className={`text-2xl font-bold ${gameState.speechTimeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-green-400'}`}>
+                  🎤 {Math.floor(gameState.speechTimeRemaining / 60)}:{(gameState.speechTimeRemaining % 60).toString().padStart(2, '0')}
                 </div>
               )}
             </>
@@ -163,7 +170,10 @@ export default function PlayPage() {
         >
           {!isConnected ? 'DISCONNECTED' :
            playerStatus === 'speaking' ? 'YOU ARE SPEAKING!' :
-           playerStatus === 'cooldown' ? 'IN COOLDOWN' :
+           playerStatus === 'cooldown' ? 
+             (currentGamePlayer?.cooldownTimeRemaining ? 
+               `COOLDOWN (${Math.floor(currentGamePlayer.cooldownTimeRemaining / 60)}:${(currentGamePlayer.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
+               'IN COOLDOWN') :
            canClaim ? 'CLAIM TO SPEAK!' : 'WAITING...'}
         </button>
 
@@ -173,7 +183,10 @@ export default function PlayPage() {
             Status: {
               !isConnected ? 'Disconnected' :
               playerStatus === 'speaking' ? 'Speaking' :
-              playerStatus === 'cooldown' ? 'In cooldown' :
+              playerStatus === 'cooldown' ? 
+                (currentGamePlayer?.cooldownTimeRemaining ? 
+                  `Cooldown (${Math.floor(currentGamePlayer.cooldownTimeRemaining / 60)}:${(currentGamePlayer.cooldownTimeRemaining % 60).toString().padStart(2, '0')})` : 
+                  'In cooldown') :
               playerStatus === 'available' ? 'Available' : 'Waiting'
             }
           </div>

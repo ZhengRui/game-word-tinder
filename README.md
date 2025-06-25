@@ -34,8 +34,9 @@ An interactive word game for Toastmasters meetings that encourages spontaneous s
 3. **Register:** Each player enters their name and selects a team (A, B, or C)
 4. **Start Game:** Admin clicks "Start Game" on the display screen
 5. **Claim Topics:** When a topic appears with 10-second timer, players race to claim it
-6. **Speak:** The first player to claim gets to deliver a 1-minute impromptu speech
-7. **Continue:** Game automatically progresses to next topics
+6. **Speak:** The first player to claim gets 1 minute to deliver an impromptu speech
+7. **Cooldown:** After speaking, player enters 3-minute cooldown (cannot claim again)
+8. **Continue:** Game automatically progresses to next topics with new cards
 
 ## 🔧 Technical Architecture
 
@@ -48,7 +49,7 @@ An interactive word game for Toastmasters meetings that encourages spontaneous s
 
 ## 📊 Implementation Status
 
-### ✅ Completed (Phase 1 & 2)
+### ✅ Completed (Phase 1, 2 & 3)
 - Real-time player registration system
 - Live team member tracking and display
 - Connection management (connect/disconnect/reconnect)
@@ -57,18 +58,21 @@ An interactive word game for Toastmasters meetings that encourages spontaneous s
 - 10-second auto-skip timer for cards
 - Real-time claiming mechanism (first-come-first-served)
 - Speaker identification and disconnect handling
+- 1-minute speech timer with visual countdown
+- 3-minute cooldown system for players after speaking
+- Automatic state transitions between game phases
 - Responsive UI for both display and mobile interfaces
 - Admin controls (Start Game, Next Card, Stop Game)
 
-### 🚧 In Development (Phase 3)
-- 1-minute speech timer with auto-progression
-- 3-minute cooldown system for players after speaking
+### 🚧 In Development (Phase 4)
+- Scoring system with team leaderboards
+- Point calculation for successful speeches
 
 ### 📋 Planned Features
-- Scoring system with team leaderboards
 - Visual transitions and animations
 - Sound effects for game events
-- Admin controls for game flow
+- Live leaderboard updates
+- Audience voting system
 
 ## 📁 Project Structure
 

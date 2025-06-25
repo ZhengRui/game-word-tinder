@@ -8,6 +8,7 @@ export interface Player {
   name: string;
   team: string;
   status: 'available' | 'speaking' | 'cooldown';
+  cooldownTimeRemaining?: number;
 }
 
 export interface Team {
@@ -32,6 +33,7 @@ export interface GameState {
   gamePhase: 'waiting' | 'card-display' | 'speaking' | 'cooldown';
   currentSpeaker: string | null;
   cardTimeRemaining: number;
+  speechTimeRemaining: number;
 }
 
 export function useSocket() {

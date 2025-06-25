@@ -40,13 +40,19 @@
 - **Responsive Layout**: Mobile-optimized interface with fixed-height card container
 - **Visual Enhancements**: Timer countdown with red pulsing animation when ≤3 seconds
 
-## ❌ **NOT IMPLEMENTED** - Advanced Game Features
-1. **Speech Timer Systems**:
-   - 1-minute speech countdown during speaking phase
-   - 3-minute cooldown timers for players after speaking
-   - Auto-progression from speaking to cooldown phase
+## ✅ **COMPLETED** - Phase 3: Speech and Cooldown Timer Systems
+- **1-Minute Speech Timer**: Automatic countdown starting when player claims topic
+- **Speech Timer Display**: Real-time countdown in MM:SS format on both interfaces
+- **Auto-Transition**: Automatic progression from speaking to cooldown after 1 minute
+- **3-Minute Cooldown System**: Individual cooldown timers for each player after speaking
+- **Cooldown Timer Display**: Live countdown showing remaining cooldown time
+- **Auto-Return to Available**: Players automatically become available after cooldown expires
+- **Visual Feedback**: Green speech timer, gray cooldown buttons with countdown
+- **Edge Case Handling**: Proper cleanup when speaker disconnects during speech/cooldown
+- **Button State Management**: Claim buttons properly disabled and show timer during cooldown
 
-2. **Scoring System**:
+## ❌ **NOT IMPLEMENTED** - Advanced Game Features
+1. **Scoring System**:
    - Point calculation and storage for successful speeches
    - Bonus point mechanics for performance
    - Team leaderboards and final scoring
@@ -59,18 +65,18 @@
    - Optional audience voting system
 
 ## 🎯 **NEXT PRIORITY TASKS**
-1. Implement 1-minute speech timer with auto-progression
-2. Add 3-minute cooldown system for players after speaking
-3. Build scoring system with point tracking and team leaderboards
-4. Add enhanced visual transitions and sound effects
+1. Build scoring system with point tracking and team leaderboards
+2. Add enhanced visual transitions and sound effects
+3. Implement live leaderboard updates during game
+4. Add optional audience voting system
 
 ## 📝 **Development Notes**
 - **Running the app**: Requires two terminals
   - Terminal 1: `bun run socket-server` (Socket.io server on port 3001)
   - Terminal 2: `bun dev` (Next.js app on port 3000)
 - **Testing**: Open `/display` on main screen, `/play` on mobile devices
-- **Game Flow**: Start Game → 10s card timer → Claim speech → Speaker identified → Disconnect cleanup
+- **Game Flow**: Start Game → 10s card timer → Claim speech → 1min speech timer → 3min cooldown → Available again
 - **Deployment**: Current setup requires external Socket.io hosting for production (Vercel + Railway/Render)
 
-## 🎯 **Ready for Phase 3**
-Word card management system is complete with claiming and disconnect handling. Next phase: Speech and Cooldown Timer Systems.
+## 🎯 **Ready for Phase 4**
+Core game functionality is complete with full timer systems and real-time multiplayer support. Next phase: Scoring System with team leaderboards.
